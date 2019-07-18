@@ -24,6 +24,7 @@ const alertContainerMetricAboveMax = ({
   data,
   slack,
   appLink,
+  lastMetricsText,
 }) => {
   if (maxValue == null) {
     return;
@@ -67,7 +68,7 @@ const alertContainerMetricAboveMax = ({
                   valueWithTimestamp.value,
                 )}`,
             )
-            .join('\n')}`,
+            .join('\n')}\n${lastMetricsText}`,
         });
       }
     },
@@ -138,6 +139,9 @@ export const sync = async options => {
         ],
       });
     }
+    const lastMetricsText = `${Object.entries(metrics)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('\n')}`;
 
     // not enough data to send alerts
     if (storage.stats.length < options.minimumStats) {
@@ -145,15 +149,18 @@ export const sync = async options => {
     }
 
     const { alertRules: { maxInContainers = [] } = {} } = options;
-    Object.entries(maxInContainers).forEach(([metricName, maxValue]) => {
-      alertContainerMetricAboveMax({
-        metricName,
-        maxValue,
-        data,
-        slack,
-        appLink,
-      });
-    });
+    Object.entries(maxInContainers).forEach(
+      ([metricName, maxValue]) => {
+        alertContainerMetricAboveMax({
+          metricName,
+          maxValue,
+          data,
+          slack,
+          appLink,
+          lastMetricsText,
+        });
+      },
+    );
 
     return data;
   } catch (err) {
