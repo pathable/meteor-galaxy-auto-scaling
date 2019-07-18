@@ -78,7 +78,7 @@ const alertKadiraMetricAboveMax = ({
     metricsWithTimestamp.map(c => c.value).every(v => v > maxValue)
   ) {
     slack.alert({
-      text: `<!channel>\n${appLink}: application compromised\n*${metricName}*: Latest ${
+      text: `${appLink}: application compromised\n*${metricName}*: Latest ${
         metricsWithTimestamp.length
       } metrics are above ${SUPPORTED_KADIRA_METRICS[
         metricName
@@ -136,7 +136,7 @@ const alertContainerMetricAboveMax = ({
         valuesWithTimestamp.map(c => c.value).every(v => v > maxValue)
       ) {
         slack.alert({
-          text: `<!channel>\n${appLink}\n*${containerName}*: container compromised\n*${metricName}*: Latest ${
+          text: `${appLink}\n*${containerName}*: container compromised\n*${metricName}*: Latest ${
             valuesWithTimestamp.length
           } metrics are above ${SUPPORTED_CONTAINER_METRICS[
             metricName
