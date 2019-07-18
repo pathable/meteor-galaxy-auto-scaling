@@ -9,6 +9,31 @@ import {
   getPercentualNumber,
 } from './utilities';
 
+const getSlack = options => {
+  if (options.silentSlack) {
+    return {
+      alert(...args) {
+        console.log('silent slack - alert: ', ...args);
+      },
+      note(...args) {
+        console.log('silent slack - note', ...args);
+      },
+    };
+  }
+  if (options.slackWebhook) {
+    return slackNotify(options.slackWebhook);
+  }
+
+  return {
+    alert(...args) {
+      console.log('no slack - alert: ', ...args);
+    },
+    note(...args) {
+      console.log('no slack - note', ...args);
+    },
+  };
+};
+
 const SUPPORTED_CONTAINER_METRICS = {
   cpu: { parse: getPercentualNumber, format: value => `${value}%` },
   memory: {
@@ -76,9 +101,7 @@ const alertContainerMetricAboveMax = ({
 };
 
 export const sync = async options => {
-  const slack = options.slackWebhook
-    ? slackNotify(options.slackWebhook)
-    : () => {};
+  const slack = getSlack(options);
   fs.ensureFileSync(options.persistentStorage);
   const storage = fs.readJsonSync(options.persistentStorage, {
     throws: false,

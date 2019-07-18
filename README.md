@@ -11,6 +11,7 @@ program to monitor and auto-scale Meteor Galaxy
   "username": "your Galaxy username",
   "password": "your Galaxy password",
   "slackWebhook": "your Slack webhook URL",
+  "silentSlack": false,
   "persistentStorage": "full path to where we want to storage scrapped info",
   "infoRules": {
     "send": false
