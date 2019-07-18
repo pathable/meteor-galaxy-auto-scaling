@@ -68,7 +68,7 @@ const alertContainerMetricAboveMax = ({
                   valueWithTimestamp.value,
                 )}`,
             )
-            .join('\n')}\n${lastMetricsText}`,
+            .join('\n')}\n*Metrics*\n${lastMetricsText}`,
         });
       }
     },
