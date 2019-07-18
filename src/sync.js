@@ -50,6 +50,7 @@ const alertContainerMetricAboveMax = ({
   slack,
   appLink,
   lastMetricsText,
+  lastContainerText,
 }) => {
   if (maxValue == null) {
     return;
@@ -93,7 +94,9 @@ const alertContainerMetricAboveMax = ({
                   valueWithTimestamp.value,
                 )}`,
             )
-            .join('\n')}\n*Metrics*\n${lastMetricsText}`,
+            .join(
+              '\n',
+            )}\n*Metrics*\n${lastMetricsText}\n*Containers*\n${lastContainerText}`,
         });
       }
     },
@@ -139,7 +142,7 @@ export const sync = async options => {
     // slack.alert('Something important happened!', storage.metrics); // Posts to #alerts by default
     const { infoRules: { send = false } = {} } = options;
 
-    const { containers, metrics, ...rest } = lastStat;
+    const { containers, metrics, ...containerInfo } = lastStat;
     if (send) {
       slack.note({
         text: `${appLink} - Kadira Summary Update`,
@@ -147,7 +150,7 @@ export const sync = async options => {
       });
       slack.note({
         text: `${appLink} - Galaxy Summary Update`,
-        fields: rest,
+        fields: containerInfo,
       });
       slack.note({
         text: `${appLink} - Galaxy Containers Update`,
@@ -163,6 +166,9 @@ export const sync = async options => {
       });
     }
     const lastMetricsText = `${Object.entries(metrics)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('\n')}`;
+    const lastContainerText = `${Object.entries(containerInfo)
       .map(([key, value]) => `${key}: ${value}`)
       .join('\n')}`;
 
@@ -181,6 +187,7 @@ export const sync = async options => {
           slack,
           appLink,
           lastMetricsText,
+          lastContainerText,
         });
       },
     );

@@ -64,12 +64,12 @@ export const scrapeInfo = async (browser, page, options) => {
   };
 
   return {
-    timestamp: new Date().getTime()/1000|0,
-    quantity,
     type,
+    quantity,
     running,
     unavailable,
     containers,
     metrics,
+    timestamp: new Date().getTime()/1000|0,
   };
 };
