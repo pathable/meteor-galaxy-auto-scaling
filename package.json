@@ -1,0 +1,27 @@
+{
+  "name": "meteor-galaxy-auto-scaling",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon --exec babel-node src/index.js",
+    "build": "rm -rf dist && babel src --out-dir dist",
+    "serve": "node dist/index.js"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/node": "^7.5.5",
+    "@babel/polyfill": "^7.4.4",
+    "@babel/preset-env": "^7.5.5",
+    "nodemon": "^1.19.1",
+    "prettier": "^1.18.2"
+  },
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "fs-extra": "^8.1.0",
+    "puppeteer": "^1.18.1",
+    "slack-notify": "^0.1.7"
+  }
+}
