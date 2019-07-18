@@ -6,6 +6,7 @@ import { scrapeInfo } from './scrape-info';
 import { login } from './login';
 import {
   getFormattedTimestamp,
+  getMillisecondsNumber,
   getPercentualNumber,
 } from './utilities';
 
@@ -41,6 +42,60 @@ const SUPPORTED_CONTAINER_METRICS = {
     format: value => `${value}%`,
   },
   clients: { parse: value => value, format: value => value },
+};
+
+const SUPPORTED_KADIRA_METRICS = {
+  pubSubResponseTime: {
+    parse: getMillisecondsNumber,
+    format: value => `${value}ms`,
+  },
+  methodResponseTime: {
+    parse: getMillisecondsNumber,
+    format: value => `${value}ms`,
+  },
+};
+
+const alertKadiraMetricAboveMax = ({
+  metricName,
+  maxValue,
+  data,
+  slack,
+  appLink,
+  lastMetricsText,
+  lastContainerText,
+}) => {
+  if (maxValue == null) {
+    return;
+  }
+  const metricsWithTimestamp = data.stats.map(s => ({
+    value: SUPPORTED_KADIRA_METRICS[metricName].parse(
+      s.metrics[metricName],
+    ),
+    timestamp: s.timestamp,
+  }));
+
+  if (
+    metricsWithTimestamp.map(c => c.value).every(v => v > maxValue)
+  ) {
+    slack.alert({
+      text: `<!channel>\n${appLink}: application compromised\n*${metricName}*: Latest ${
+        metricsWithTimestamp.length
+      } metrics are above ${SUPPORTED_KADIRA_METRICS[
+        metricName
+      ].format(maxValue)}\n${metricsWithTimestamp
+        .map(
+          valueWithTimestamp =>
+            `${getFormattedTimestamp(
+              valueWithTimestamp.timestamp,
+            )}: ${SUPPORTED_KADIRA_METRICS[metricName].format(
+              valueWithTimestamp.value,
+            )}`,
+        )
+        .join(
+          '\n',
+        )}\n*Metrics*\n${lastMetricsText}\n*Containers*\n${lastContainerText}`,
+    });
+  }
 };
 
 const alertContainerMetricAboveMax = ({
@@ -177,7 +232,9 @@ export const sync = async options => {
       return data;
     }
 
-    const { alertRules: { maxInContainers = [] } = {} } = options;
+    const {
+      alertRules: { maxInContainers = [], maxInKadira = [] } = {},
+    } = options;
     Object.entries(maxInContainers).forEach(
       ([metricName, maxValue]) => {
         alertContainerMetricAboveMax({
@@ -191,6 +248,17 @@ export const sync = async options => {
         });
       },
     );
+    Object.entries(maxInKadira).forEach(([metricName, maxValue]) => {
+      alertKadiraMetricAboveMax({
+        metricName,
+        maxValue,
+        data,
+        slack,
+        appLink,
+        lastMetricsText,
+        lastContainerText,
+      });
+    });
 
     return data;
   } catch (err) {
