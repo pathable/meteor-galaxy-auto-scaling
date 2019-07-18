@@ -1,7 +1,6 @@
 import '@babel/polyfill';
 import fs from 'fs-extra';
 import yargs from 'yargs';
-import 'dotenv/config';
 import { sync } from './sync';
 
 const main = async () => {

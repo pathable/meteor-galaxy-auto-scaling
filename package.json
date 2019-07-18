@@ -19,7 +19,6 @@
     "prettier": "^1.18.2"
   },
   "dependencies": {
-    "dotenv": "^8.0.0",
     "fs-extra": "^8.1.0",
     "puppeteer": "^1.18.1",
     "slack-notify": "^0.1.7",
