@@ -17,4 +17,7 @@ const main = async () => {
   await sync(options);
 };
 
-main().catch(e => console.error(e));
+main().catch(e => {
+  console.error('Error on main', e);
+  throw e;
+});

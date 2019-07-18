@@ -155,25 +155,10 @@ export const sync = async options => {
       });
     });
 
-    //
-    // log({ level: 'lastStat', message: `Current status: ${JSON.stringify(status, null, 2)}` })
-    //
-    // // Check if any log alerts need to be created from this status
-    // logAlerts(status, options.alertRules);
-    //
-    // // Decide if any scaling action is needed
-    // const scaleAction = scalingLogic(status, options.scalingRules);
-    //
-    // if (scaleAction > 0) {
-    //     await page.click('button.cardinal-action.increment');
-    // }
-    //
-    // if (scaleAction < 0) {
-    //     await page.click('button.cardinal-action.decrement');
-    // }
     return data;
   } catch (err) {
-    console.error(err);
+    console.error('Error syncing', err);
+    throw err;
   } finally {
     await page.close();
     await browser.close();
