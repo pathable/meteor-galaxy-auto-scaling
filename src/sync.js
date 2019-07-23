@@ -193,21 +193,22 @@ export const sync = async options => {
     // prepare data? format?
     const data = storage;
 
-    // slack.success('Something good happened!'); // Posts to #alerts by default
-    // slack.alert('Something important happened!', storage.metrics); // Posts to #alerts by default
-    const { infoRules: { send = false } = {} } = options;
+    const { infoRules: { send = false, channel } = {} } = options;
 
     const { containers, metrics, ...containerInfo } = lastStat;
     if (send) {
       slack.note({
+        ...(channel ? { channel } : {}),
         text: `${appLink} - Kadira Summary Update`,
         fields: metrics,
       });
       slack.note({
+        ...(channel ? { channel } : {}),
         text: `${appLink} - Galaxy Summary Update`,
         fields: containerInfo,
       });
       slack.note({
+        ...(channel ? { channel } : {}),
         text: `${appLink} - Galaxy Containers Update`,
         attachments: [
           {
