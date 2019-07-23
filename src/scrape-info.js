@@ -1,22 +1,22 @@
 import { login } from './login';
 
-export const scrapeInfo = async (browser, page, options) => {
-  await page.waitForSelector('div.cardinal-number.editable');
-  await page.waitFor(5000);
+export const scrapeInfo = async (browser, galaxy, options) => {
+  await galaxy.waitForSelector('div.cardinal-number.editable');
+  await galaxy.waitFor(5000);
 
-  const quantity = await page.$$eval(
+  const quantity = await galaxy.$$eval(
     '.cardinal-number.editable > div >' + ' input[type=number]',
     c => c[0].value,
   );
-  const type = await page.$$eval(
+  const type = await galaxy.$$eval(
     '.cardinal-subtext',
     c => c[0].innerText,
   );
-  const [running, unavailable] = await page.$$eval(
+  const [running, unavailable] = await galaxy.$$eval(
     '.cardinal-number > span',
     r => [r[0].innerText, r[1].innerText],
   );
-  const containers = await page.$$eval('.container-item', items =>
+  const containers = await galaxy.$$eval('.container-item', items =>
     items.map(item => ({
       name: item.querySelector('.truncate').innerText,
       timestamp: item.querySelector('.timestamp').innerText,
@@ -30,7 +30,7 @@ export const scrapeInfo = async (browser, page, options) => {
         .innerHTML,
     })),
   );
-  await page.click('.complementary');
+  await galaxy.click('.complementary');
   const apmTarget = await browser.waitForTarget(target =>
     target.url().includes('apm.meteor.com'),
   );
