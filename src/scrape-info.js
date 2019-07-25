@@ -45,7 +45,7 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     usernameFieldName: 'usernameOrEmail',
     submitNodeType: 'input',
   });
-  await apm.waitFor(5000);
+  await apm.waitFor(15000);
   const [
     pubSubResponseTime,
     methodResponseTime,

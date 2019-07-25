@@ -67,12 +67,15 @@ const alertKadiraMetricAboveMax = ({
   if (maxValue == null) {
     return;
   }
-  const metricsWithTimestamp = data.stats.map(s => ({
-    value: SUPPORTED_KADIRA_METRICS[metricName].parse(
-      s.metrics[metricName],
-    ),
-    timestamp: s.timestamp,
-  }));
+
+  const metricsWithTimestamp = data.stats
+    .filter(s => s.metrics[metricName])
+    .map(s => ({
+      value: SUPPORTED_KADIRA_METRICS[metricName].parse(
+        s.metrics[metricName],
+      ),
+      timestamp: s.timestamp,
+    }));
 
   if (
     metricsWithTimestamp.map(c => c.value).every(v => v > maxValue)
@@ -175,7 +178,7 @@ export const sync = async options => {
     page = await browser.newPage();
 
     const appUrl = `https://galaxy.meteor.com/app/${options.appName}/containers`;
-    const appLink = `<${appUrl}|${options.appName}>`;
+    const appLink = `${options.appName} - <${appUrl}|see on Galaxy>`;
 
     await page.goto(appUrl);
 
@@ -199,24 +202,26 @@ export const sync = async options => {
     if (send) {
       slack.note({
         ...(channel ? { channel } : {}),
-        text: `${appLink} - Kadira Summary Update`,
-        fields: metrics,
-      });
-      slack.note({
-        ...(channel ? { channel } : {}),
-        text: `${appLink} - Galaxy Summary Update`,
-        fields: containerInfo,
-      });
-      slack.note({
-        ...(channel ? { channel } : {}),
-        text: `${appLink} - Galaxy Containers Update`,
+        text: appLink,
         attachments: [
           {
             fallback: `Check on Galaxy`,
-            fields: containers.map(container => ({
-              title: container.name,
-              value: `${container.timestamp}, ${container.clients} clients, ${container.cpu}, ${container.memory}`,
-            })),
+            fields: [
+              ...Object.entries(metrics).map(([title, value]) => ({
+                title,
+                value,
+              })),
+              ...Object.entries(containerInfo).map(
+                ([title, value]) => ({
+                  title,
+                  value,
+                }),
+              ),
+              ...containers.map(container => ({
+                title: container.name,
+                value: `${container.timestamp}, ${container.clients} clients, ${container.cpu}, ${container.memory}`,
+              })),
+            ],
           },
         ],
       });
