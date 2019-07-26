@@ -35,7 +35,7 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     target.url().includes('apm.meteor.com'),
   );
   const apm = await apmTarget.page();
-  await apm.waitFor(5000);
+  await apm.waitFor(10000);
   await apm.click('button#sign-in-with-meteor');
   const dialogTarget = await browser.waitForTarget(target =>
     target.url().includes('www.meteor.com'),
