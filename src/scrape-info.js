@@ -63,9 +63,9 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     sessionsByHost,
   };
 
-  const containersWithGalaxyAndAPMInfo = containersWithGalaxyInfo.map(async container => {
+  /* const containersWithGalaxyAndAPMInfo = containersWithGalaxyInfo.map(async container => {
     await galaxy.click(`.${container.name}`);
-    await galaxy.waitForSelector(`.active.${container.name}`);
+    await galaxy.waitForSelector(`.active.${container.name}`, { timeout: 6000 });
     const [
       pubSubResponseTime,
       methodResponseTime,
@@ -83,8 +83,8 @@ export const scrapeInfo = async (browser, galaxy, options) => {
       cpuUsageAverage,
       sessionsByHost,
     };
-  });
-  const containers = containersWithGalaxyAndAPMInfo;
+  }); */ // TODO(#166463636): Uncomment when Meteor APM is able to be logged.
+  const containers = containersWithGalaxyInfo;
 
   return {
     type,

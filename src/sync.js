@@ -9,6 +9,7 @@ import {
   getMillisecondsNumber,
   getPercentualNumber,
 } from './utilities';
+import { autoscale } from './autoscale';
 
 const getSlack = options => {
   if (options.silentSlack) {
@@ -183,6 +184,7 @@ export const sync = async options => {
     await page.goto(appUrl);
 
     await login(page, options);
+    console.warn('loggedIn');
     const lastStat = await scrapeInfo(browser, page, options);
     if (
       storage.stats &&
@@ -192,6 +194,8 @@ export const sync = async options => {
     }
     storage.stats.push(lastStat);
     fs.writeJSONSync(options.persistentStorage, storage);
+
+    await autoscale(lastStat, options, { slack, page });
 
     // prepare data? format?
     const data = storage;
