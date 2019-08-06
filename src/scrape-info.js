@@ -16,7 +16,7 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     '.cardinal-number > span',
     r => [r[0].innerText, r[1].innerText],
   );
-  const containers = await galaxy.$$eval('.container-item', items =>
+  const containersWithGalaxyInfo = await galaxy.$$eval('.container-item', items =>
     items.map(item => ({
       name: item.querySelector('.truncate').innerText,
       timestamp: item.querySelector('.timestamp').innerText,
@@ -62,6 +62,29 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     cpuUsageAverage,
     sessionsByHost,
   };
+
+  const containersWithGalaxyAndAPMInfo = containersWithGalaxyInfo.map(async container => {
+    await galaxy.click(`.${container.name}`);
+    await galaxy.waitForSelector(`.active.${container.name}`);
+    const [
+      pubSubResponseTime,
+      methodResponseTime,
+      memoryUsageByHost,
+      cpuUsageAverage,
+      sessionsByHost,
+    ] = await apm.$$eval('.item', items =>
+      items.map(item => item.querySelector('.value').innerText),
+    );
+    return {
+      ...container,
+      pubSubResponseTime,
+      methodResponseTime,
+      memoryUsageByHost,
+      cpuUsageAverage,
+      sessionsByHost,
+    };
+  });
+  const containers = containersWithGalaxyAndAPMInfo;
 
   return {
     type,
