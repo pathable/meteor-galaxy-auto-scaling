@@ -100,14 +100,15 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const containerToKill = activeMetricsByContainer.reduce((maxCpuContainer, container) => {
     return container.cpuUsageAverage > maxCpuContainer.cpuUsageAverage && container || maxCpuContainer;
   }, activeMetricsByContainer[0]);
-  const shouldKillContainer = checkKillAction(autoscaleRules, containerToKill);
+  const shouldKillContainer = containerToKill && checkKillAction(autoscaleRules, containerToKill);
   if (shouldKillContainer) {
-    console.warn('shouldKillContainer');
-    // TODO(#166463636): Ensure the containerToKill is the one that the button is clicked.
+    const indexContainerToKill = activeMetricsByContainer.indexOf(containerToKill);
+    console.warn('shouldKillContainer', containerToKill);
+    const killButton = await galaxy.$$('.container-item')[indexContainerToKill * 3];
+    if (killButton) {
+      killButton.click();
+    }
   }
-
-  console.warn('activeMetrics', activeMetrics);
-  console.warn('activeMetricsByContainer', activeMetricsByContainer);
 
   const {
     minContainers = MIN_CONTAINERS,

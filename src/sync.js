@@ -184,7 +184,6 @@ export const sync = async options => {
     await page.goto(appUrl);
 
     await login(page, options);
-    console.warn('loggedIn');
     const lastStat = await scrapeInfo(browser, page, options);
     if (
       storage.stats &&
@@ -195,7 +194,7 @@ export const sync = async options => {
     storage.stats.push(lastStat);
     fs.writeJSONSync(options.persistentStorage, storage);
 
-    await autoscale(lastStat, options, { slack, galaxy: page });
+    await autoscale(lastStat, options, { slack, browser, galaxy: page });
 
     // prepare data? format?
     const data = storage;
