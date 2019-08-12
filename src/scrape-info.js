@@ -1,7 +1,8 @@
 import { login } from './login';
+import { WAIT_SELECTOR_TIMEOUT } from './constants';
 
 export const scrapeInfo = async (browser, galaxy, options) => {
-  await galaxy.waitForSelector('div.cardinal-number.editable');
+  await galaxy.waitForSelector('div.cardinal-number.editable', { timeout: WAIT_SELECTOR_TIMEOUT });
   await galaxy.waitFor(5000);
 
   const quantity = await galaxy.$$eval(
@@ -32,20 +33,21 @@ export const scrapeInfo = async (browser, galaxy, options) => {
   );
   await galaxy.click('.complementary');
   const apmTarget = await browser.waitForTarget(target =>
-    target.url().includes('apm.meteor.com'),
-  );
+    target.url().includes('apm.meteor.com')
+    , { timeout: WAIT_SELECTOR_TIMEOUT });
   const apm = await apmTarget.page();
   await apm.waitFor(10000);
   await apm.click('button#sign-in-with-meteor');
   const dialogTarget = await browser.waitForTarget(target =>
-    target.url().includes('www.meteor.com'),
-  );
+    target.url().includes('www.meteor.com')
+    , { timeout: WAIT_SELECTOR_TIMEOUT });
   const dialog = await dialogTarget.page();
   await login(dialog, options, {
     usernameFieldName: 'usernameOrEmail',
     submitNodeType: 'input',
   });
-  await apm.waitFor(15000);
+  await apm.waitForSelector('#main-nav', { timeout: WAIT_SELECTOR_TIMEOUT });
+
   const [
     pubSubResponseTime,
     methodResponseTime,
@@ -63,9 +65,13 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     sessionsByHost,
   };
 
-  /* const containersWithGalaxyAndAPMInfo = containersWithGalaxyInfo.map(async container => {
-    await galaxy.click(`.${container.name}`);
-    await galaxy.waitForSelector(`.active.${container.name}`, { timeout: 6000 });
+  const containers = [];
+  for (let container of containersWithGalaxyInfo) {
+    await apm.waitForSelector(`.${container.name}`, { timeout: WAIT_SELECTOR_TIMEOUT });
+    await apm.click('#hosts + .dropdown-toggle');
+    await apm.click(`.${container.name} a`);
+    await apm.waitForSelector(`.active.${container.name}`);
+    await apm.waitForSelector('.summery-inner .loading-indicator', { hidden: true, timeout: WAIT_SELECTOR_TIMEOUT });
     const [
       pubSubResponseTime,
       methodResponseTime,
@@ -75,16 +81,15 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     ] = await apm.$$eval('.item', items =>
       items.map(item => item.querySelector('.value').innerText),
     );
-    return {
+    containers.push({
       ...container,
       pubSubResponseTime,
       methodResponseTime,
       memoryUsageByHost,
       cpuUsageAverage,
       sessionsByHost,
-    };
-  }); */ // TODO(#166463636): Uncomment when Meteor APM is able to be logged.
-  const containers = containersWithGalaxyInfo;
+    });
+  }
 
   return {
     type,
