@@ -1,7 +1,7 @@
-const MAX_CONTAINERS = '10';
-const MIN_CONTAINERS = '2';
+const MAX_CONTAINERS = 10;
+const MIN_CONTAINERS = 2;
 
-const checkAction = (action, rules, metrics) => {
+const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
   const when = rules[action];
   const {
     responseTimeAbove,
@@ -22,23 +22,34 @@ const checkAction = (action, rules, metrics) => {
   let shouldRunAction = !!when;
   if(!shouldRunAction) return false;
 
-  shouldRunAction = responseTimeAbove != null && (pubSubResponseTime > responseTimeAbove || methodResponseTime > responseTimeAbove);
-  shouldRunAction = responseTimeBelow != null && (pubSubResponseTime < responseTimeBelow || methodResponseTime < responseTimeBelow) || shouldRunAction;
+  shouldRunAction = andMode;
 
-  shouldRunAction = cpuAbove != null && cpuUsageAverage > cpuAbove || shouldRunAction;
-  shouldRunAction = cpuBelow != null && cpuUsageAverage > cpuBelow || shouldRunAction;
+  let intermediateCheck = (pubSubResponseTime > responseTimeAbove || methodResponseTime > responseTimeAbove);
+  if (responseTimeAbove != null) shouldRunAction = intermediateCheck;
+  intermediateCheck = pubSubResponseTime < responseTimeBelow || methodResponseTime < responseTimeBelow;
+  if (responseTimeBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
-  shouldRunAction = sessionsAbove != null && sessionsByHost > sessionsAbove || shouldRunAction;
-  shouldRunAction = sessionsBelow != null && cpuUsageAverage < sessionsBelow || shouldRunAction;
+  intermediateCheck = cpuUsageAverage > cpuAbove;
+  if (cpuAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
+  intermediateCheck = cpuUsageAverage < cpuBelow;
+  if (cpuBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
+
+  intermediateCheck = sessionsByHost > sessionsAbove;
+  if (sessionsAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
+  intermediateCheck = sessionsByHost < sessionsBelow;
+  if (sessionsBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
   return shouldRunAction;
 };
 
-export const autoscale = async (lastStat, options, { page, slack } = {}) => {
+const checkKillAction = (rules, metrics) => checkAction('killWhen', rules, metrics);
+
+export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const { autoscaleRules } = options;
   if (!autoscaleRules) return false;
 
-  const { containers, quantity } = lastStat;
+  const { containers } = lastStat;
+  const quantity = parseInt(lastStat.quantity, 10);
 
   const activeMetricsByContainer = containers.map((container, i) => {
     const {
@@ -86,17 +97,17 @@ export const autoscale = async (lastStat, options, { page, slack } = {}) => {
     };
   }, {});
 
-  console.warn('activeMetrics', activeMetrics);
-  console.warn('activeMetricsByContainer', activeMetricsByContainer);
-
   const containerToKill = activeMetricsByContainer.reduce((maxCpuContainer, container) => {
     return container.cpuUsageAverage > maxCpuContainer.cpuUsageAverage && container || maxCpuContainer;
   }, activeMetricsByContainer[0]);
-  const shouldKillContainer = checkAction('killWhen', autoscaleRules, containerToKill);
+  const shouldKillContainer = checkKillAction(autoscaleRules, containerToKill);
   if (shouldKillContainer) {
     console.warn('shouldKillContainer');
     // TODO(#166463636): Ensure the containerToKill is the one that the button is clicked.
   }
+
+  console.warn('activeMetrics', activeMetrics);
+  console.warn('activeMetricsByContainer', activeMetricsByContainer);
 
   const {
     minContainers = MIN_CONTAINERS,
@@ -106,9 +117,9 @@ export const autoscale = async (lastStat, options, { page, slack } = {}) => {
   const shouldReduceContainer = quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
   if (shouldAddContainer) {
     console.warn('shouldAddContainer');
-    await page.click('.cardinal-action.increment');
+    await galaxy.click('.cardinal-action.increment');
   } else if (shouldReduceContainer) {
     console.warn('shouldReduceContainer');
-    await page.click('.cardinal-action.decrement');
+    await galaxy.click('.cardinal-action.decrement');
   }
 };
