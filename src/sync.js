@@ -5,9 +5,9 @@ import slackNotify from 'slack-notify';
 import { scrapeInfo } from './scrape-info';
 import { login } from './login';
 import {
-  getFormattedTimestamp,
+  getFormattedTimestamp, getGalaxyUrl,
   getMillisecondsNumber,
-  getPercentualNumber,
+  getPercentualNumber, goGalaxy,
 } from './utilities';
 import { autoscale } from './autoscale';
 
@@ -176,12 +176,7 @@ export const sync = async options => {
       ...(options.puppeteer || {}),
     });
 
-    page = await browser.newPage();
-
-    const appUrl = `https://galaxy.meteor.com/app/${options.appName}/containers`;
-    const appLink = `${options.appName} - <${appUrl}|see on Galaxy>`;
-
-    await page.goto(appUrl);
+    page = await goGalaxy(options, browser);
 
     await login(page, options);
     const lastStat = await scrapeInfo(browser, page, options);
@@ -194,13 +189,14 @@ export const sync = async options => {
     storage.stats.push(lastStat);
     fs.writeJSONSync(options.persistentStorage, storage);
 
-    await autoscale(lastStat, options, { slack, browser, galaxy: page });
+    await autoscale(lastStat, options, { slack, browser });
 
     // prepare data? format?
     const data = storage;
 
     const { infoRules: { send = false, channel } = {} } = options;
 
+    const appLink = getGalaxyUrl(options);
     const { containers, metrics, ...containerInfo } = lastStat;
     if (send) {
       slack.note({

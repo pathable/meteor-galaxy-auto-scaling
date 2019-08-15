@@ -67,10 +67,12 @@ export const scrapeInfo = async (browser, galaxy, options) => {
 
   const containers = [];
   for (let container of containersWithGalaxyInfo) {
-    await apm.waitForSelector(`.${container.name}`, { timeout: WAIT_SELECTOR_TIMEOUT });
+    const containerSelector = `li[class="${container.name}"] a`;
+    await apm.waitForSelector(containerSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
     await apm.click('#hosts + .dropdown-toggle');
-    await apm.click(`.${container.name} a`);
-    await apm.waitForSelector(`.active.${container.name}`);
+    await apm.click(containerSelector);
+    const containerActiveSelector = `li[class="active ${container.name}"] a`;
+    await apm.waitForSelector(containerActiveSelector);
     await apm.waitForSelector('.summery-inner .loading-indicator', { hidden: true, timeout: WAIT_SELECTOR_TIMEOUT });
     const [
       pubSubResponseTime,

@@ -6,3 +6,12 @@ export const getMillisecondsNumber = txt =>
 
 export const getFormattedTimestamp = timestamp =>
   `<!date^${timestamp}^{date_short_pretty} at {time_secs}|${timestamp}>`;
+
+export const getGalaxyUrl = options => `https://galaxy.meteor.com/app/${options.appName}/containers`;
+
+export const goGalaxy = async (options, browser) => {
+  const  page = await browser.newPage();
+  const appUrl = getGalaxyUrl(options);
+  await page.goto(appUrl);
+  return page;
+};

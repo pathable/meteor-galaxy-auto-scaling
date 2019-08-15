@@ -1,3 +1,6 @@
+import { goGalaxy } from './utilities';
+import { WAIT_SELECTOR_TIMEOUT } from './constants';
+
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
 
@@ -44,9 +47,12 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
 
 const checkKillAction = (rules, metrics) => checkAction('killWhen', rules, metrics);
 
-export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
+export const autoscale = async (lastStat, options, { browser, slack } = {}) => {
   const { autoscaleRules } = options;
   if (!autoscaleRules) return false;
+
+  const galaxy = await goGalaxy(options, browser);
+  await galaxy.waitForSelector('div.cardinal-number.editable', { timeout: WAIT_SELECTOR_TIMEOUT });
 
   const { containers } = lastStat;
   const quantity = parseInt(lastStat.quantity, 10);
@@ -104,7 +110,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   if (shouldKillContainer) {
     const indexContainerToKill = activeMetricsByContainer.indexOf(containerToKill);
     console.warn('shouldKillContainer', containerToKill);
-    const killButton = await galaxy.$$('.container-item')[indexContainerToKill * 3];
+    const killButton = await galaxy.$$('.container-item')[((indexContainerToKill + 1) * 3) - 1];
     if (killButton) {
       killButton.click();
     }
@@ -116,11 +122,19 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   } = autoscaleRules;
   const shouldAddContainer = quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
   const shouldReduceContainer = quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
+  const loadingIndicatorSelector = '.drawer.arrow-third';
   if (shouldAddContainer) {
     console.warn('shouldAddContainer');
-    await galaxy.click('.cardinal-action.increment');
+    const incrementButtonSelector = '.cardinal-action.increment';
+    await galaxy.waitForSelector(incrementButtonSelector);
+    await galaxy.click(incrementButtonSelector);
+    await galaxy.waitForSelector(loadingIndicatorSelector);
   } else if (shouldReduceContainer) {
     console.warn('shouldReduceContainer');
-    await galaxy.click('.cardinal-action.decrement');
+    const decrementButtonSelector = '.cardinal-action.decrement';
+    await galaxy.waitForSelector(decrementButtonSelector);
+    await galaxy.click(decrementButtonSelector);
+    await galaxy.waitForSelector(loadingIndicatorSelector);
+    console.warn('llego');
   }
 };
