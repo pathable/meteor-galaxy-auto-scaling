@@ -1,4 +1,4 @@
-import { getGalaxyUrl, waitForFixedTime } from './utilities';
+import { bringToFront, getGalaxyUrl, waitForFixedTime } from './utilities';
 
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
@@ -6,16 +6,8 @@ const MIN_CONTAINERS = 2;
 const trySendAlertToSlack = ({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack) => {
   const { infoRules: { send = false } } = options;
   if (!send) return;
-
-  const activeMetricsText = `${Object.entries(activeMetrics)
-    .map(([key, value]) => `${key}: ${value}`)
-    .join('\n')}`;
-  const activeMetricsByContainerText = `${Object.entries(activeMetricsByContainer)
-    .map(([key, value]) => `${key}: ${value}`)
-    .join('\n')}`;
-
   slack.alert({
-    text: `${appLink}: ${msgTitle}\n*Active Metrics*\n${activeMetricsText}\n*Active Containers*\n${activeMetricsByContainerText}`,
+    text: `${appLink}: ${msgTitle}`,
   });
 };
 
@@ -65,6 +57,8 @@ const checkKillAction = (rules, metrics) => checkAction('killWhen', rules, metri
 export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const { autoscaleRules } = options;
   if (!autoscaleRules) return false;
+
+  await bringToFront(galaxy);
 
   const appLink = getGalaxyUrl(options);
   const { scaling, containers } = lastStat;
@@ -169,16 +163,15 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     containerToKill && checkKillAction(autoscaleRules, containerToKill);
 
   if (shouldKillContainer) {
-    await galaxy.$eval(`.container-item:nth-child(${indexContainerToKill})`, item => {
+    await galaxy.$eval(`.container-item:nth-child(${indexContainerToKill + 1})`, item => {
       const $killButton = item.querySelector('.icon-power');
       if ($killButton) {
-        const msgTitle = `Killing container ${containerToKill.name}`;
-        console.info(msgTitle);
         $killButton.click();
-
-        trySendAlert({ msgTitle });
       }
     });
+    const msgTitle = `Killing container ${containerToKill.name}`;
+    console.info(msgTitle);
+    trySendAlert({ msgTitle });
     await waitForFixedTime(galaxy);
   }
 };

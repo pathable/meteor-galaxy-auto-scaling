@@ -1,9 +1,8 @@
-import { login } from './login';
 import { WAIT_SELECTOR_TIMEOUT } from './constants';
+import { bringToFront } from './utilities';
 
-export const scrapeInfo = async (browser, galaxy, options) => {
-  await galaxy.waitForSelector('div.cardinal-number.editable', { timeout: WAIT_SELECTOR_TIMEOUT });
-  await galaxy.waitFor(5000);
+export const scrapeInfo = async (browser, galaxy, apm) => {
+  await bringToFront(galaxy);
 
   const quantity = await galaxy.$$eval(
     '.cardinal-number.editable > div >' + ' input[type=number]',
@@ -38,22 +37,8 @@ export const scrapeInfo = async (browser, galaxy, options) => {
       stopping: !!item.querySelector('.app-status.stopping.small'),
     })),
   );
-  await galaxy.click('.complementary');
-  const apmTarget = await browser.waitForTarget(target =>
-    target.url().includes('apm.meteor.com')
-    , { timeout: WAIT_SELECTOR_TIMEOUT });
-  const apm = await apmTarget.page();
-  await apm.waitFor(10000);
-  await apm.click('button#sign-in-with-meteor');
-  const dialogTarget = await browser.waitForTarget(target =>
-    target.url().includes('www.meteor.com')
-    , { timeout: WAIT_SELECTOR_TIMEOUT });
-  const dialog = await dialogTarget.page();
-  await login(dialog, options, {
-    usernameFieldName: 'usernameOrEmail',
-    submitNodeType: 'input',
-  });
-  await apm.waitForSelector('#main-nav', { timeout: WAIT_SELECTOR_TIMEOUT });
+
+  await bringToFront(apm);
 
   const [
     pubSubResponseTime,

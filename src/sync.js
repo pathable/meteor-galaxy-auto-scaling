@@ -1,13 +1,11 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs-extra';
 import slackNotify from 'slack-notify';
-
 import { scrapeInfo } from './scrape-info';
-import { login } from './login';
 import {
   getFormattedTimestamp, getGalaxyUrl,
   getMillisecondsNumber,
-  getPercentualNumber, goGalaxy,
+  getPercentualNumber, goAndLoginAPM, goAndLoginGalaxy, logout,
 } from './utilities';
 import { autoscale } from './autoscale';
 
@@ -169,17 +167,21 @@ export const sync = async options => {
     throws: false,
   }) || { stats: [] };
   let browser = null;
-  let page = null;
+  let galaxy = null;
+  let apm = null;
   try {
     browser = await puppeteer.launch({
       defaultViewport: null,
       ...(options.puppeteer || {}),
     });
 
-    page = await goGalaxy(options, browser);
+    galaxy = await goAndLoginGalaxy(options, browser);
 
-    await login(page, options);
-    const lastStat = await scrapeInfo(browser, page, options);
+    await galaxy.click('.complementary');
+
+    apm  = await goAndLoginAPM(options, browser);
+
+    const lastStat = await scrapeInfo(browser, galaxy, apm);
     if (
       storage.stats &&
       storage.stats.length >= options.minimumStats
@@ -189,7 +191,7 @@ export const sync = async options => {
     storage.stats.push(lastStat);
     fs.writeJSONSync(options.persistentStorage, storage);
 
-    await autoscale(lastStat, options, { slack, browser, galaxy: page });
+    await autoscale(lastStat, options, { slack, browser, galaxy, apm });
 
     // prepare data? format?
     const data = storage;
@@ -268,9 +270,11 @@ export const sync = async options => {
     return data;
   } catch (err) {
     console.error('Error syncing', err);
+    await logout(galaxy, apm);
+    if (browser) await browser.close();
     throw err;
   } finally {
-    await page.close();
-    await browser.close();
+    await logout(galaxy, apm);
+    if (browser) await browser.close();
   }
 };
