@@ -1,6 +1,3 @@
-import { goGalaxy } from './utilities';
-import { WAIT_SELECTOR_TIMEOUT } from './constants';
-
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
 
@@ -47,11 +44,11 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
 
 const checkKillAction = (rules, metrics) => checkAction('killWhen', rules, metrics);
 
-export const autoscale = async (lastStat, options, { galaxy, browser, slack } = {}) => {
+export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const { autoscaleRules } = options;
   if (!autoscaleRules) return false;
 
-  const { containers } = lastStat;
+  const { scaling, containers } = lastStat;
   const quantity = parseInt(lastStat.quantity, 10);
   const runningContainers = containers.filter(container => container.running);
 
@@ -122,9 +119,9 @@ export const autoscale = async (lastStat, options, { galaxy, browser, slack } = 
     minContainers = MIN_CONTAINERS,
     maxContainers = MAX_CONTAINERS,
   } = autoscaleRules;
-  const isStartingContainer = containers.some(container => container.starting);
-  const shouldAddContainer = !isStartingContainer && quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
-  const shouldReduceContainer = !isStartingContainer && quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
+  const isScalingContainer = scaling;
+  const shouldAddContainer = !isScalingContainer && quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
+  const shouldReduceContainer = !isScalingContainer && quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
   const loadingIndicatorSelector = '.drawer.arrow-third';
   if (shouldAddContainer) {
     console.warn('shouldAddContainer');
@@ -132,11 +129,13 @@ export const autoscale = async (lastStat, options, { galaxy, browser, slack } = 
     await galaxy.waitForSelector(incrementButtonSelector);
     await galaxy.click(incrementButtonSelector);
     await galaxy.waitForSelector(loadingIndicatorSelector);
+    await galaxy.waitFor(5000);
   } else if (shouldReduceContainer) {
     console.warn('shouldReduceContainer');
     const decrementButtonSelector = '.cardinal-action.decrement';
     await galaxy.waitForSelector(decrementButtonSelector);
     await galaxy.click(decrementButtonSelector);
     await galaxy.waitForSelector(loadingIndicatorSelector);
+    await galaxy.waitFor(5000);
   }
 };

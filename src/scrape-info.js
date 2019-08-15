@@ -17,6 +17,10 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     '.cardinal-number > span',
     r => [r[0].innerText, r[1].innerText],
   );
+  const scaling = await galaxy.$eval(
+    '.lower-row',
+    item => !!item.querySelector('.drawer.arrow-third'),
+  );
   const containersWithGalaxyInfo = await galaxy.$$eval('.container-item', items =>
     items.map(item => ({
       name: item.querySelector('.truncate').innerText,
@@ -100,6 +104,7 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     type,
     quantity,
     running,
+    scaling,
     unavailable,
     containers,
     metrics,
