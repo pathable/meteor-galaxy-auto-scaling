@@ -35,6 +35,7 @@ export const scrapeInfo = async (browser, galaxy, options) => {
         .innerHTML,
       starting: !!item.querySelector('.app-status.starting.small'),
       running: !!item.querySelector('.app-status.running.small'),
+      stopping: !!item.querySelector('.app-status.stopping.small'),
     })),
   );
   await galaxy.click('.complementary');

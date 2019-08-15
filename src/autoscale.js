@@ -1,3 +1,5 @@
+import { waitForFixedTime } from './utilities';
+
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
 
@@ -98,21 +100,23 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     };
   }, {});
 
-  console.warn('containers', containers);
-  console.warn('activeMetricsByContainer', activeMetricsByContainer);
-  console.warn('activeMetrics', activeMetrics);
-
   const containerToKill = activeMetricsByContainer.reduce((maxCpuContainer, container) => {
-    return container.cpuUsageAverage > maxCpuContainer.cpuUsageAverage && container || maxCpuContainer;
+    return !container.stopping && !container.starting && container.cpuUsageAverage > maxCpuContainer.cpuUsageAverage && container || maxCpuContainer;
   }, activeMetricsByContainer[0]);
-  const shouldKillContainer = containerToKill && checkKillAction(autoscaleRules, containerToKill);
+  const killingContainerCount = containers.reduce((acc, container) => container.stopping || container.starting ? acc + 1 : acc, 0);
+  const indexContainerToKill = containers.findIndex(container => container.name === containerToKill.name);
+  const shouldKillContainer = (killingContainerCount + 1) !== quantity &&
+    indexContainerToKill > -1 &&
+    containerToKill && checkKillAction(autoscaleRules, containerToKill);
   if (shouldKillContainer) {
-    const indexContainerToKill = activeMetricsByContainer.indexOf(containerToKill);
-    console.warn('shouldKillContainer', containerToKill);
-    const killButton = await galaxy.$$('.container-item')[((indexContainerToKill + 1) * 3) - 1];
-    if (killButton) {
-      killButton.click();
-    }
+    await galaxy.$eval(`.container-item:nth-child(${indexContainerToKill})`, item => {
+      const $killButton = item.querySelector('.icon-power');
+      if ($killButton) {
+        console.info(`Killing container ${containerToKill.name}`);
+        $killButton.click();
+      }
+    });
+    await waitForFixedTime(galaxy);
   }
 
   const {
@@ -124,18 +128,20 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const shouldReduceContainer = !isScalingContainer && quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
   const loadingIndicatorSelector = '.drawer.arrow-third';
   if (shouldAddContainer) {
-    console.warn('shouldAddContainer');
+    const nextContainerCount = quantity + 1;
+    console.info(`Scaling up containers to ${nextContainerCount}`);
     const incrementButtonSelector = '.cardinal-action.increment';
     await galaxy.waitForSelector(incrementButtonSelector);
     await galaxy.click(incrementButtonSelector);
     await galaxy.waitForSelector(loadingIndicatorSelector);
-    await galaxy.waitFor(5000);
+    await waitForFixedTime(galaxy);
   } else if (shouldReduceContainer) {
-    console.warn('shouldReduceContainer');
+    const nextContainerCount = quantity - 1;
+    console.info(`Scaling down containers to ${nextContainerCount}`);
     const decrementButtonSelector = '.cardinal-action.decrement';
     await galaxy.waitForSelector(decrementButtonSelector);
     await galaxy.click(decrementButtonSelector);
     await galaxy.waitForSelector(loadingIndicatorSelector);
-    await galaxy.waitFor(5000);
+    await waitForFixedTime(galaxy);
   }
 };

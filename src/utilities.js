@@ -24,3 +24,7 @@ export const waitForContainers = async (amount, galaxy) => {
     return containerItemsCount === count;
   }, {}, amount);
 };
+
+export const waitForFixedTime = async galaxy => {
+  await galaxy.waitFor(5000);
+};
