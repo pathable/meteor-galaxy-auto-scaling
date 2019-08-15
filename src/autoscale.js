@@ -4,11 +4,7 @@ const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
 
 const trySendAlertToSlack = ({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack) => {
-  const { infoRules: { send = false } } = options;
-  if (!send) return;
-  slack.alert({
-    text: `${appLink}: ${msgTitle}`,
-  });
+  slack.alert({ text: `${appLink}: ${msgTitle}` });
 };
 
 const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
