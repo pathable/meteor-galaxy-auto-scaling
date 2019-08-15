@@ -47,17 +47,15 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
 
 const checkKillAction = (rules, metrics) => checkAction('killWhen', rules, metrics);
 
-export const autoscale = async (lastStat, options, { browser, slack } = {}) => {
+export const autoscale = async (lastStat, options, { galaxy, browser, slack } = {}) => {
   const { autoscaleRules } = options;
   if (!autoscaleRules) return false;
 
-  const galaxy = await goGalaxy(options, browser);
-  await galaxy.waitForSelector('div.cardinal-number.editable', { timeout: WAIT_SELECTOR_TIMEOUT });
-
   const { containers } = lastStat;
   const quantity = parseInt(lastStat.quantity, 10);
+  const runningContainers = containers.filter(container => container.running);
 
-  const activeMetricsByContainer = containers.map((container, i) => {
+  const activeMetricsByContainer = runningContainers.map(container => {
     const {
       pubSubResponseTime = '0',
       methodResponseTime = '0',
@@ -75,7 +73,7 @@ export const autoscale = async (lastStat, options, { browser, slack } = {}) => {
     }
   });
 
-  const activeMetrics = containers.reduce((avgMetrics, container, i) => {
+  const activeMetrics = runningContainers.reduce((avgMetrics, container, i) => {
     const {
       pubSubResponseTime: avgPubSubResponseTime = '0',
       methodResponseTime: avgMethodResponseTime = '0',
@@ -103,6 +101,10 @@ export const autoscale = async (lastStat, options, { browser, slack } = {}) => {
     };
   }, {});
 
+  console.warn('containers', containers);
+  console.warn('activeMetricsByContainer', activeMetricsByContainer);
+  console.warn('activeMetrics', activeMetrics);
+
   const containerToKill = activeMetricsByContainer.reduce((maxCpuContainer, container) => {
     return container.cpuUsageAverage > maxCpuContainer.cpuUsageAverage && container || maxCpuContainer;
   }, activeMetricsByContainer[0]);
@@ -120,8 +122,9 @@ export const autoscale = async (lastStat, options, { browser, slack } = {}) => {
     minContainers = MIN_CONTAINERS,
     maxContainers = MAX_CONTAINERS,
   } = autoscaleRules;
-  const shouldAddContainer = quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
-  const shouldReduceContainer = quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
+  const isStartingContainer = containers.some(container => container.starting);
+  const shouldAddContainer = !isStartingContainer && quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
+  const shouldReduceContainer = !isStartingContainer && quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
   const loadingIndicatorSelector = '.drawer.arrow-third';
   if (shouldAddContainer) {
     console.warn('shouldAddContainer');
@@ -135,6 +138,5 @@ export const autoscale = async (lastStat, options, { browser, slack } = {}) => {
     await galaxy.waitForSelector(decrementButtonSelector);
     await galaxy.click(decrementButtonSelector);
     await galaxy.waitForSelector(loadingIndicatorSelector);
-    console.warn('llego');
   }
 };

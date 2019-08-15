@@ -189,7 +189,7 @@ export const sync = async options => {
     storage.stats.push(lastStat);
     fs.writeJSONSync(options.persistentStorage, storage);
 
-    await autoscale(lastStat, options, { slack, browser });
+    await autoscale(lastStat, options, { slack, browser, galaxy: page });
 
     // prepare data? format?
     const data = storage;

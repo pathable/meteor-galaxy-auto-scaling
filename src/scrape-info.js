@@ -29,6 +29,8 @@ export const scrapeInfo = async (browser, galaxy, options) => {
       cpu: item.querySelector('.cpu > svg > .value > text').innerHTML,
       memory: item.querySelector('.memory > svg > .value > text')
         .innerHTML,
+      starting: !!item.querySelector('.app-status.starting.small'),
+      running: !!item.querySelector('.app-status.running.small'),
     })),
   );
   await galaxy.click('.complementary');
@@ -74,6 +76,7 @@ export const scrapeInfo = async (browser, galaxy, options) => {
     const containerActiveSelector = `li[class="active ${container.name}"] a`;
     await apm.waitForSelector(containerActiveSelector);
     await apm.waitForSelector('.summery-inner .loading-indicator', { hidden: true, timeout: WAIT_SELECTOR_TIMEOUT });
+    await apm.waitFor(1000);
     const [
       pubSubResponseTime,
       methodResponseTime,
