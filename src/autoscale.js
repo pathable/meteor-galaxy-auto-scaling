@@ -1,7 +1,23 @@
-import { waitForFixedTime } from './utilities';
+import { getGalaxyUrl, waitForFixedTime } from './utilities';
 
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
+
+const trySendAlertToSlack = ({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack) => {
+  const { infoRules: { send = false } } = options;
+  if (!send) return;
+
+  const activeMetricsText = `${Object.entries(activeMetrics)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n')}`;
+  const activeMetricsByContainerText = `${Object.entries(activeMetricsByContainer)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n')}`;
+
+  slack.alert({
+    text: `${appLink}: ${msgTitle}\n*Active Metrics*\n${activeMetricsText}\n*Active Containers*\n${activeMetricsByContainerText}`,
+  });
+};
 
 const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
   const when = rules[action];
@@ -50,6 +66,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const { autoscaleRules } = options;
   if (!autoscaleRules) return false;
 
+  const appLink = getGalaxyUrl(options);
   const { scaling, containers } = lastStat;
   const quantity = parseInt(lastStat.quantity, 10);
   const runningContainers = containers.filter(container => container.running);
@@ -100,6 +117,48 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     };
   }, {});
 
+  const {
+    minContainers = MIN_CONTAINERS,
+    maxContainers = MAX_CONTAINERS,
+  } = autoscaleRules;
+  const isScalingContainer = scaling;
+
+  const trySendAlert = ({ msgTitle }) =>
+    trySendAlertToSlack({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack)
+
+  const shouldAddContainer = !isScalingContainer && quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
+  const loadingIndicatorSelector = '.drawer.arrow-third';
+  if (shouldAddContainer) {
+    const nextContainerCount = quantity + 1;
+    const msgTitle = `Scaling up containers to ${nextContainerCount}`;
+    console.info(msgTitle);
+
+    const incrementButtonSelector = '.cardinal-action.increment';
+    await galaxy.waitForSelector(incrementButtonSelector);
+    await galaxy.click(incrementButtonSelector);
+    await galaxy.waitForSelector(loadingIndicatorSelector);
+    await waitForFixedTime(galaxy);
+
+    trySendAlert({ msgTitle });
+    return;
+  }
+
+  const shouldReduceContainer = !isScalingContainer && quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
+  if (shouldReduceContainer) {
+    const nextContainerCount = quantity - 1;
+    const msgTitle = `Scaling down containers to ${nextContainerCount}`;
+    console.info(msgTitle);
+
+    const decrementButtonSelector = '.cardinal-action.decrement';
+    await galaxy.waitForSelector(decrementButtonSelector);
+    await galaxy.click(decrementButtonSelector);
+    await galaxy.waitForSelector(loadingIndicatorSelector);
+    await waitForFixedTime(galaxy);
+
+    trySendAlert({ msgTitle });
+    return;
+  }
+
   const containerToKill = activeMetricsByContainer.reduce((maxCpuContainer, container) => {
     return !container.stopping && !container.starting && container.cpuUsageAverage > maxCpuContainer.cpuUsageAverage && container || maxCpuContainer;
   }, activeMetricsByContainer[0]);
@@ -108,40 +167,18 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const shouldKillContainer = (killingContainerCount + 1) !== quantity &&
     indexContainerToKill > -1 &&
     containerToKill && checkKillAction(autoscaleRules, containerToKill);
+
   if (shouldKillContainer) {
     await galaxy.$eval(`.container-item:nth-child(${indexContainerToKill})`, item => {
       const $killButton = item.querySelector('.icon-power');
       if ($killButton) {
-        console.info(`Killing container ${containerToKill.name}`);
+        const msgTitle = `Killing container ${containerToKill.name}`;
+        console.info(msgTitle);
         $killButton.click();
+
+        trySendAlert({ msgTitle });
       }
     });
-    await waitForFixedTime(galaxy);
-  }
-
-  const {
-    minContainers = MIN_CONTAINERS,
-    maxContainers = MAX_CONTAINERS,
-  } = autoscaleRules;
-  const isScalingContainer = scaling;
-  const shouldAddContainer = !isScalingContainer && quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
-  const shouldReduceContainer = !isScalingContainer && quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
-  const loadingIndicatorSelector = '.drawer.arrow-third';
-  if (shouldAddContainer) {
-    const nextContainerCount = quantity + 1;
-    console.info(`Scaling up containers to ${nextContainerCount}`);
-    const incrementButtonSelector = '.cardinal-action.increment';
-    await galaxy.waitForSelector(incrementButtonSelector);
-    await galaxy.click(incrementButtonSelector);
-    await galaxy.waitForSelector(loadingIndicatorSelector);
-    await waitForFixedTime(galaxy);
-  } else if (shouldReduceContainer) {
-    const nextContainerCount = quantity - 1;
-    console.info(`Scaling down containers to ${nextContainerCount}`);
-    const decrementButtonSelector = '.cardinal-action.decrement';
-    await galaxy.waitForSelector(decrementButtonSelector);
-    await galaxy.click(decrementButtonSelector);
-    await galaxy.waitForSelector(loadingIndicatorSelector);
     await waitForFixedTime(galaxy);
   }
 };
