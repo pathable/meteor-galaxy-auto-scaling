@@ -59,31 +59,37 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
 
   const containers = [];
   for (let container of containersWithGalaxyInfo) {
-    const containerSelector = `li[class="${container.name}"] a`;
-    await apm.waitForSelector(containerSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
-    await apm.click('#hosts + .dropdown-toggle');
-    await apm.click(containerSelector);
-    const containerActiveSelector = `li[class="active ${container.name}"] a`;
-    await apm.waitForSelector(containerActiveSelector);
-    await apm.waitForSelector('.summery-inner .loading-indicator', { hidden: true, timeout: WAIT_SELECTOR_TIMEOUT });
-    await apm.waitFor(1000);
-    const [
-      pubSubResponseTime,
-      methodResponseTime,
-      memoryUsageByHost,
-      cpuUsageAverage,
-      sessionsByHost,
-    ] = await apm.$$eval('.item', items =>
-      items.map(item => item.querySelector('.value').innerText),
-    );
-    containers.push({
-      ...container,
-      pubSubResponseTime,
-      methodResponseTime,
-      memoryUsageByHost,
-      cpuUsageAverage,
-      sessionsByHost,
-    });
+    try {
+      const containerSelector = `li[class="${container.name}"] a`;
+      await apm.waitForSelector(containerSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
+      await apm.click('#hosts + .dropdown-toggle');
+      await apm.click(containerSelector);
+      const containerActiveSelector = `li[class="active ${container.name}"] a`;
+      await apm.waitForSelector(containerActiveSelector);
+      await apm.waitForSelector('.summery-inner .loading-indicator', { hidden: true, timeout: WAIT_SELECTOR_TIMEOUT });
+      await apm.waitFor(1000);
+      const [
+        pubSubResponseTime,
+        methodResponseTime,
+        memoryUsageByHost,
+        cpuUsageAverage,
+        sessionsByHost,
+      ] = await apm.$$eval('.item', items =>
+        items.map(item => item.querySelector('.value').innerText),
+      );
+      containers.push({
+        ...container,
+        pubSubResponseTime,
+        methodResponseTime,
+        memoryUsageByHost,
+        cpuUsageAverage,
+        sessionsByHost,
+      });
+    } catch(e) {
+      // Ignore timeout errors to solve a scenario of some containers
+      // aren't found on APM because a delay on last containers started.
+      console.error(e);
+    }
   }
 
   return {
