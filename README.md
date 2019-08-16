@@ -22,6 +22,24 @@ NodeJS command line tool to monitor and auto-scale Meteor Galaxy
       "clients": 5
     }
   },
+  "autoscaleRules": {
+    "containersToScale": 2,
+    "minContainers": 2,
+    "maxContainers": 10,
+    "addWhen": {
+      "responseTimeAbove": 300,
+      "cpuAbove": 50
+    },
+    "reduceWhen": {
+      "responseTimeBelow": 150,
+      "cpuBelow": 25
+    },
+    "killWhen": {
+      "responseTimeAbove": 300,
+      "cpuAbove": 50,
+      "sessionsAbove": 40
+    }
+  },
   "minimumStats": 5,
   "puppeteer": {
     "headless": false
@@ -29,6 +47,26 @@ NodeJS command line tool to monitor and auto-scale Meteor Galaxy
 }
 
 ```
+
+## Auto scale rules
+
+The autoscaling behavior is meant to adjust smartly the containers on the Galaxy server taking into account the data got from there and a predefined configuration. This behavior is part of the process that reports the alerts of the galaxy state, so it is run each X minutes.
+
+- You are able to tweak the configuration for each app by setting the conditions to run the add containers (`addWhen`), reduce containers (`reduceWhen`) or kill containers (`killWhen`) behaviors.
+
+- The conditions available are: "[responseTime|cpu|sessions][Above|Below]". You can check the examples on this PR.
+
+- The conditions express the property average on the active containers. The active containers are those that are running, not being starting or stoping.
+
+- The conditions are solved by an `AND`. Any condition absence means to not consider it for the checking. So, if we only provide to `addWhen` behavior the `responseTimeAbove: 300` condition, such behavior will only run every time the response time are above 300ms.
+
+- The `addWhen` and `reduceWhen` behaviors check to not go beyond a containers count range. This range is described by the `minContainers` and `maxContainers` configuration.
+
+- The `addWhen` and `reduceWhen` behaviors won't run if a scaling is happening. If any other condition passes it will run on the next run.
+
+- The `killWhen` behavior tries to kill the container with high CPU consumption and that matches the conditions configured.
+
+- An slack alert is sent anytime a scaling behavior is triggered.
 
 ## Fixing Puppeteer on Ubuntu 16.04
 sudo apt-get install libx11-xcb1 libxcomposite1 libxi6 libxext6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2 libpangocairo-1.0-0 libatk1.0-0 libatk-bridge2.0-0 libgtk-3-0
