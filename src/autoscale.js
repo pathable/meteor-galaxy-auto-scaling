@@ -118,7 +118,29 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const isScalingContainer = scaling;
 
   const trySendAlert = ({ msgTitle }) =>
-    trySendAlertToSlack({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack)
+    trySendAlertToSlack({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack);
+
+  const containerToKill = activeMetricsByContainer.reduce((maxCpuContainer, container) => {
+    return !container.stopping && !container.starting && container.cpuUsageAverage > maxCpuContainer.cpuUsageAverage && container || maxCpuContainer;
+  }, activeMetricsByContainer[0]);
+  const killingContainerCount = containers.reduce((acc, container) => container.stopping || container.starting ? acc + 1 : acc, 0);
+  const indexContainerToKill = containers.findIndex(container => container.name === containerToKill.name);
+  const shouldKillContainer = (killingContainerCount + 1) !== quantity &&
+    indexContainerToKill > -1 &&
+    containerToKill && checkKillAction(autoscaleRules, containerToKill);
+
+  if (shouldKillContainer) {
+    await galaxy.$eval(`.container-item:nth-child(${indexContainerToKill + 1})`, item => {
+      const $killButton = item.querySelector('.icon-power');
+      if ($killButton) {
+        $killButton.click();
+      }
+    });
+    const msgTitle = `Killing container *${containerToKill.name}*`;
+    console.info(msgTitle);
+    trySendAlert({ msgTitle });
+    await waitForTime(galaxy);
+  }
 
   const shouldAddContainer = !isScalingContainer && quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
   const loadingIndicatorSelector = '.drawer.arrow-third';
@@ -158,28 +180,5 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     await waitForTime(galaxy);
 
     trySendAlert({ msgTitle });
-    return;
-  }
-
-  const containerToKill = activeMetricsByContainer.reduce((maxCpuContainer, container) => {
-    return !container.stopping && !container.starting && container.cpuUsageAverage > maxCpuContainer.cpuUsageAverage && container || maxCpuContainer;
-  }, activeMetricsByContainer[0]);
-  const killingContainerCount = containers.reduce((acc, container) => container.stopping || container.starting ? acc + 1 : acc, 0);
-  const indexContainerToKill = containers.findIndex(container => container.name === containerToKill.name);
-  const shouldKillContainer = (killingContainerCount + 1) !== quantity &&
-    indexContainerToKill > -1 &&
-    containerToKill && checkKillAction(autoscaleRules, containerToKill);
-
-  if (shouldKillContainer) {
-    await galaxy.$eval(`.container-item:nth-child(${indexContainerToKill + 1})`, item => {
-      const $killButton = item.querySelector('.icon-power');
-      if ($killButton) {
-        $killButton.click();
-      }
-    });
-    const msgTitle = `Killing container *${containerToKill.name}*`;
-    console.info(msgTitle);
-    trySendAlert({ msgTitle });
-    await waitForTime(galaxy);
   }
 };
