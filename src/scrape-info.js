@@ -1,5 +1,5 @@
 import { WAIT_SELECTOR_TIMEOUT } from './constants';
-import { bringToFront } from './utilities';
+import { bringToFront, waitForShortTime } from './utilities';
 
 export const scrapeInfo = async (browser, galaxy, apm) => {
   await bringToFront(galaxy);
@@ -67,7 +67,7 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
       const containerActiveSelector = `li[class="active ${container.name}"] a`;
       await apm.waitForSelector(containerActiveSelector);
       await apm.waitForSelector('.summery-inner .loading-indicator', { hidden: true, timeout: WAIT_SELECTOR_TIMEOUT });
-      await apm.waitFor(1000);
+      await waitForShortTime(apm);
       const [
         pubSubResponseTime,
         methodResponseTime,

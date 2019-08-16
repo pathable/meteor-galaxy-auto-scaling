@@ -1,4 +1,4 @@
-import { bringToFront, getAppLink, waitForFixedTime } from './utilities';
+import { bringToFront, getAppLink, waitForTime } from './utilities';
 
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
@@ -7,7 +7,7 @@ const trySendAlertToSlack = ({ appLink, msgTitle, activeMetrics, activeMetricsBy
   const lastMetricsText = `${Object.entries(activeMetrics)
     .map(([key, value]) => `${key}: ${value}`)
     .join('\n')}`;
-  slack.alert({ text: `${appLink}\n${msgTitle}\n\n*Metrics*\n${lastMetricsText}\n` });
+  slack.alert({ text: `${appLink}\n${msgTitle}\n\n*Active Metrics*\n${lastMetricsText}\n` });
 };
 
 const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
@@ -130,7 +130,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     await galaxy.waitForSelector(incrementButtonSelector);
     await galaxy.click(incrementButtonSelector);
     await galaxy.waitForSelector(loadingIndicatorSelector);
-    await waitForFixedTime(galaxy);
+    await waitForTime(galaxy);
 
     trySendAlert({ msgTitle });
     return;
@@ -146,7 +146,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     await galaxy.waitForSelector(decrementButtonSelector);
     await galaxy.click(decrementButtonSelector);
     await galaxy.waitForSelector(loadingIndicatorSelector);
-    await waitForFixedTime(galaxy);
+    await waitForTime(galaxy);
 
     trySendAlert({ msgTitle });
     return;
@@ -171,6 +171,6 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     const msgTitle = `Killing container *${containerToKill.name}*`;
     console.info(msgTitle);
     trySendAlert({ msgTitle });
-    await waitForFixedTime(galaxy);
+    await waitForTime(galaxy);
   }
 };

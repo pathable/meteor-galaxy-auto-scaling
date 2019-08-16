@@ -1,4 +1,4 @@
-import { WAIT_SELECTOR_TIMEOUT } from './constants';
+import { WAIT_LONG_TIMEOUT, WAIT_SELECTOR_TIMEOUT, WAIT_SHORT_TIMEOUT, WAIT_TIMEOUT } from './constants';
 import { login } from './login';
 
 export const getPercentualNumber = txt =>
@@ -35,7 +35,7 @@ export const goAndLoginAPM = async (options, browser) => {
       target.url().includes('apm.meteor.com')
     , { timeout: WAIT_SELECTOR_TIMEOUT });
   const apm = await apmTarget.page();
-  await waitForFixedTime(apm);
+  await waitForTime(apm);
   await apm.click('button#sign-in-with-meteor');
   const dialogTarget = await browser.waitForTarget(target =>
       target.url().includes('www.meteor.com')
@@ -59,12 +59,16 @@ export const waitForContainers = async (amount, galaxy) => {
   }, {}, amount);
 };
 
-export const waitForFixedTime = async galaxy => {
-  await galaxy.waitFor(5000);
+export const waitForTime = async galaxy => {
+  await galaxy.waitFor(WAIT_TIMEOUT);
 };
 
 export const waitForShortTime = async galaxy => {
-  await galaxy.waitFor(1000);
+  await galaxy.waitFor(WAIT_SHORT_TIMEOUT);
+};
+
+export const waitForLongTime = async galaxy => {
+  await galaxy.waitFor(WAIT_LONG_TIMEOUT);
 };
 
 export const logoutGalaxy = async galaxy => {
@@ -74,7 +78,7 @@ export const logoutGalaxy = async galaxy => {
   const galaxyLogoutButtonSelector = '.account-menu .link.tertiary';
   await galaxy.waitForSelector(galaxyLogoutButtonSelector);
   await galaxy.click(galaxyLogoutButtonSelector);
-  await waitForFixedTime(galaxy);
+  await waitForTime(galaxy);
 };
 
 export const logoutAPM = async apm => {
@@ -84,7 +88,7 @@ export const logoutAPM = async apm => {
   const apmLogoutButtonSelector = '#login-buttons-logout';
   await apm.waitForSelector(apmLogoutButtonSelector);
   await apm.click(apmLogoutButtonSelector);
-  await waitForFixedTime(apm);
+  await waitForTime(apm);
 };
 
 export const logout = async (galaxy, apm) => {
