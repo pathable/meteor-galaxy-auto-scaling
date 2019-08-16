@@ -1,10 +1,13 @@
-import { bringToFront, getGalaxyUrl, waitForFixedTime } from './utilities';
+import { bringToFront, getAppLink, waitForFixedTime } from './utilities';
 
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
 
 const trySendAlertToSlack = ({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack) => {
-  slack.alert({ text: `${appLink}: ${msgTitle}` });
+  const lastMetricsText = `${Object.entries(activeMetrics)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n')}`;
+  slack.alert({ text: `${appLink}\n${msgTitle}\n\n*Metrics*\n${lastMetricsText}\n` });
 };
 
 const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
@@ -56,7 +59,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
   await bringToFront(galaxy);
 
-  const appLink = getGalaxyUrl(options);
+  const appLink = getAppLink(options);
   const { scaling, containers } = lastStat;
   const quantity = parseInt(lastStat.quantity, 10);
   const runningContainers = containers.filter(container => container.running);
@@ -120,7 +123,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const loadingIndicatorSelector = '.drawer.arrow-third';
   if (shouldAddContainer) {
     const nextContainerCount = quantity + 1;
-    const msgTitle = `Scaling up containers to ${nextContainerCount}`;
+    const msgTitle = `Scaling up containers to *${nextContainerCount}*`;
     console.info(msgTitle);
 
     const incrementButtonSelector = '.cardinal-action.increment';
@@ -136,7 +139,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const shouldReduceContainer = !isScalingContainer && quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
   if (shouldReduceContainer) {
     const nextContainerCount = quantity - 1;
-    const msgTitle = `Scaling down containers to ${nextContainerCount}`;
+    const msgTitle = `Scaling down containers to *${nextContainerCount}*`;
     console.info(msgTitle);
 
     const decrementButtonSelector = '.cardinal-action.decrement';
@@ -165,7 +168,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
         $killButton.click();
       }
     });
-    const msgTitle = `Killing container ${containerToKill.name}`;
+    const msgTitle = `Killing container *${containerToKill.name}*`;
     console.info(msgTitle);
     trySendAlert({ msgTitle });
     await waitForFixedTime(galaxy);

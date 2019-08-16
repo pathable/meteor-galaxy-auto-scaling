@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import slackNotify from 'slack-notify';
 import { scrapeInfo } from './scrape-info';
 import {
+  getAppLink,
   getFormattedTimestamp, getGalaxyUrl,
   getMillisecondsNumber,
   getPercentualNumber, goAndLoginAPM, goAndLoginGalaxy, logout,
@@ -198,7 +199,7 @@ export const sync = async options => {
 
     const { infoRules: { send = false, channel } = {} } = options;
 
-    const appLink = getGalaxyUrl(options);
+    const appLink = getAppLink(options);
     const { containers, metrics, ...containerInfo } = lastStat;
     if (send) {
       slack.note({

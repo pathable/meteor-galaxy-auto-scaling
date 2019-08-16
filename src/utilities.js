@@ -12,6 +12,11 @@ export const getFormattedTimestamp = timestamp =>
 
 export const getGalaxyUrl = options => `https://galaxy.meteor.com/app/${options.appName}/containers`;
 
+export const getAppLink = options => {
+  const appUrl = getGalaxyUrl(options);
+  return `${options.appName} - <${appUrl}|see on Galaxy>`;
+};
+
 export const goAndLoginGalaxy = async (options, browser) => {
   const  galaxy = await browser.newPage();
   const appUrl = getGalaxyUrl(options);
