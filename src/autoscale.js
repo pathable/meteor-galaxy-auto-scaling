@@ -1,13 +1,20 @@
-import { bringToFront, getAppLink, waitForTime, times } from './utilities';
+import { bringToFront, getAppLink, waitForTime, times, round } from './utilities';
 
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
 
 const trySendAlertToSlack = ({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack) => {
-  const lastMetricsText = `${Object.entries(activeMetrics)
-    .map(([key, value]) => `${key}: ${value}`)
+  const activeMetricsFormatted = {
+    pubSubResponseTime: `${round(activeMetrics.pubSubResponseTime)}ms`,
+    methodResponseTime: `${round(activeMetrics.methodResponseTime)}ms`,
+    memoryUsageByHost: `${round(activeMetrics.memoryUsageByHost)}MB`,
+    cpuUsageAverage: `${round(activeMetrics.cpuUsageAverage)}%`,
+    sessionsByHost: `${round(activeMetrics.sessionsByHost, 1)}%`,
+  };
+  const lastMetricsText = `${Object.entries(activeMetricsFormatted)
+    .map(([key, value]) => `*${key}*\n${value}`)
     .join('\n')}`;
-  slack.alert({ text: `${appLink}\n${msgTitle}\n\n*Active Metrics*\n${lastMetricsText}\n` });
+  slack.alert({ text: `${appLink}\n${msgTitle}\n\n*Metrics*\n${lastMetricsText}\n` });
 };
 
 const checkAction = (action, rules, metrics, { andMode = true } = {}) => {

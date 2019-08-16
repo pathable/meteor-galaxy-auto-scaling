@@ -111,3 +111,8 @@ export const times = (n, fn, context = undefined) => {
   let i = 0;
   while (fn.call(context, i) !== false && ++i < n) {}
 };
+
+export const round = (num, decimals = 2) => {
+  const interDecimal = Math.pow(10, decimals);
+  return Math.round(num * interDecimal) / interDecimal;
+};
