@@ -1,4 +1,4 @@
-import { bringToFront, getAppLink, waitForTime } from './utilities';
+import { bringToFront, getAppLink, waitForTime, times } from './utilities';
 
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
@@ -113,6 +113,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const {
     minContainers = MIN_CONTAINERS,
     maxContainers = MAX_CONTAINERS,
+    containersToScale = 1,
   } = autoscaleRules;
   const isScalingContainer = scaling;
 
@@ -122,13 +123,17 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const shouldAddContainer = !isScalingContainer && quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
   const loadingIndicatorSelector = '.drawer.arrow-third';
   if (shouldAddContainer) {
-    const nextContainerCount = quantity + 1;
-    const msgTitle = `Scaling up containers to *${nextContainerCount}*`;
+    const containersToAdd = quantity + containersToScale > maxContainers ? 1 : containersToScale;
+    const nextContainerCount = quantity + containersToAdd;
+    const msgTitle = `Scaling up containers to *${nextContainerCount}* (${containersToAdd} more)`;
     console.info(msgTitle);
 
     const incrementButtonSelector = '.cardinal-action.increment';
     await galaxy.waitForSelector(incrementButtonSelector);
-    await galaxy.click(incrementButtonSelector);
+
+    times(containersToAdd, async () => {
+      await galaxy.click(incrementButtonSelector);
+    });
     await galaxy.waitForSelector(loadingIndicatorSelector);
     await waitForTime(galaxy);
 
@@ -138,13 +143,17 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
   const shouldReduceContainer = !isScalingContainer && quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
   if (shouldReduceContainer) {
-    const nextContainerCount = quantity - 1;
-    const msgTitle = `Scaling down containers to *${nextContainerCount}*`;
+    const containersToReduce = quantity - containersToScale < minContainers ? 1 : containersToScale;
+    const nextContainerCount = quantity - containersToReduce;
+    const msgTitle = `Scaling down containers to *${nextContainerCount}* (${containersToReduce} less)`;
     console.info(msgTitle);
 
     const decrementButtonSelector = '.cardinal-action.decrement';
     await galaxy.waitForSelector(decrementButtonSelector);
-    await galaxy.click(decrementButtonSelector);
+
+    times(containersToReduce, async () => {
+      await galaxy.click(decrementButtonSelector);
+    });
     await galaxy.waitForSelector(loadingIndicatorSelector);
     await waitForTime(galaxy);
 

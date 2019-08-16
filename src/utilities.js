@@ -105,4 +105,9 @@ export const logout = async (galaxy, apm) => {
 export const bringToFront = async page => {
   await page.bringToFront();
   await waitForShortTime(page);
-}
+};
+
+export const times = (n, fn, context = undefined) => {
+  let i = 0;
+  while (fn.call(context, i) !== false && ++i < n) {}
+};
