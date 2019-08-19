@@ -45,7 +45,7 @@ export const goAndLoginAPM = async (options, browser) => {
     usernameFieldName: 'usernameOrEmail',
     submitNodeType: 'input',
   });
-  await apm.waitForSelector('#main-nav', { timeout: WAIT_SELECTOR_TIMEOUT });
+  await apm.waitForSelector('#main-nav', { timeout: WAIT_LONG_TIMEOUT });
   await waitForShortTime(apm);
   return apm;
 };
