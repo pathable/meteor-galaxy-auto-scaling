@@ -1,14 +1,14 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs-extra';
 import slackNotify from 'slack-notify';
-
 import { scrapeInfo } from './scrape-info';
-import { login } from './login';
 import {
-  getFormattedTimestamp,
+  getAppLink,
+  getFormattedTimestamp, getGalaxyUrl,
   getMillisecondsNumber,
-  getPercentualNumber,
+  getPercentualNumber, goAndLoginAPM, goAndLoginGalaxy, logout,
 } from './utilities';
+import { autoscale } from './autoscale';
 
 const getSlack = options => {
   if (options.silentSlack) {
@@ -168,22 +168,21 @@ export const sync = async options => {
     throws: false,
   }) || { stats: [] };
   let browser = null;
-  let page = null;
+  let galaxy = null;
+  let apm = null;
   try {
     browser = await puppeteer.launch({
       defaultViewport: null,
       ...(options.puppeteer || {}),
     });
 
-    page = await browser.newPage();
+    galaxy = await goAndLoginGalaxy(options, browser);
 
-    const appUrl = `https://galaxy.meteor.com/app/${options.appName}/containers`;
-    const appLink = `${options.appName} - <${appUrl}|see on Galaxy>`;
+    await galaxy.click('.complementary');
 
-    await page.goto(appUrl);
+    apm  = await goAndLoginAPM(options, browser);
 
-    await login(page, options);
-    const lastStat = await scrapeInfo(browser, page, options);
+    const lastStat = await scrapeInfo(browser, galaxy, apm);
     if (
       storage.stats &&
       storage.stats.length >= options.minimumStats
@@ -193,11 +192,14 @@ export const sync = async options => {
     storage.stats.push(lastStat);
     fs.writeJSONSync(options.persistentStorage, storage);
 
+    await autoscale(lastStat, options, { slack, browser, galaxy, apm });
+
     // prepare data? format?
     const data = storage;
 
     const { infoRules: { send = false, channel } = {} } = options;
 
+    const appLink = getAppLink(options);
     const { containers, metrics, ...containerInfo } = lastStat;
     if (send) {
       slack.note({
@@ -269,9 +271,11 @@ export const sync = async options => {
     return data;
   } catch (err) {
     console.error('Error syncing', err);
+    await logout(galaxy, apm);
+    if (browser) await browser.close();
     throw err;
   } finally {
-    await page.close();
-    await browser.close();
+    await logout(galaxy, apm);
+    if (browser) await browser.close();
   }
 };
