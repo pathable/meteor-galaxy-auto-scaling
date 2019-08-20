@@ -40,9 +40,10 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
 
   shouldRunAction = andMode;
 
-  let intermediateCheck = (pubSubResponseTime > responseTimeAbove && methodResponseTime > responseTimeAbove);
+  const responseTime = pubSubResponseTime + methodResponseTime;
+  let intermediateCheck = responseTime > responseTimeAbove;
   if (responseTimeAbove != null) shouldRunAction = intermediateCheck;
-  intermediateCheck = pubSubResponseTime < responseTimeBelow && methodResponseTime < responseTimeBelow;
+  intermediateCheck = responseTime < responseTimeBelow;
   if (responseTimeBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
   intermediateCheck = cpuUsageAverage > cpuAbove;
