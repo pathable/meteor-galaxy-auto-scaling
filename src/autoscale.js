@@ -5,13 +5,13 @@ const MIN_CONTAINERS = 2;
 
 const trySendAlertToSlack = ({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack) => {
   const activeMetricsFormatted = {
-    pubSubResponseTime: `${round(activeMetrics.pubSubResponseTime)}ms`,
-    methodResponseTime: `${round(activeMetrics.methodResponseTime)}ms`,
-    memoryUsageByHost: `${round(activeMetrics.memoryUsageByHost)}MB`,
-    cpuUsageAverage: `${round(activeMetrics.cpuUsageAverage)}%`,
-    sessionsByHost: `${round(activeMetrics.sessionsByHost, 1)}%`,
-    currentCpu: `${round(activeMetrics.currentCpu, 1)}%`,
-    currentMemory: `${round(activeMetrics.currentCpu, 1)}%`,
+    pubSubResponseTimeAverage: `${round(activeMetrics.pubSubResponseTimeAverage)}ms`,
+    methodResponseTimeAverage: `${round(activeMetrics.methodResponseTimeAverage)}ms`,
+    memoryAverage: `${round(activeMetrics.memoryAverage)}MB`,
+    cpuAverage: `${round(activeMetrics.cpuAverage)}%`,
+    sessionsAverage: `${round(activeMetrics.sessionsAverage, 1)}%`,
+    currentCpuAverage: `${round(activeMetrics.currentCpuAverage, 1)}%`,
+    currentMemoryAverage: `${round(activeMetrics.currentMemoryAverage, 1)}%`,
   };
   const lastMetricsText = `${Object.entries(activeMetricsFormatted)
     .map(([key, value]) => `*${key}*\n${value}`)
@@ -37,13 +37,13 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
   } = when || {};
 
   const {
-    pubSubResponseTime,
-    methodResponseTime,
-    cpuUsageAverage,
-    sessionsByHost,
-    memoryUsageByHost,
-    currentCpu,
-    currentMemory,
+    pubSubResponseTimeAverage,
+    methodResponseTimeAverage,
+    cpuAverage,
+    sessionsAverage,
+    memoryAverage,
+    currentCpuAverage,
+    currentMemoryAverage,
   } = metrics;
 
   let shouldRunAction = !!when;
@@ -51,35 +51,35 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
 
   shouldRunAction = andMode;
 
-  const responseTime = pubSubResponseTime + methodResponseTime;
+  const responseTime = pubSubResponseTimeAverage + methodResponseTimeAverage;
   let intermediateCheck = responseTime > responseTimeAbove;
   if (responseTimeAbove != null) shouldRunAction = intermediateCheck;
   intermediateCheck = responseTime < responseTimeBelow;
   if (responseTimeBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
-  intermediateCheck = cpuUsageAverage > cpuAbove;
+  intermediateCheck = cpuAverage > cpuAbove;
   if (cpuAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
-  intermediateCheck = cpuUsageAverage < cpuBelow;
+  intermediateCheck = cpuAverage < cpuBelow;
   if (cpuBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
-  intermediateCheck = currentCpu > currentCpuAbove;
+  intermediateCheck = currentCpuAverage > currentCpuAbove;
   if (currentCpuAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
-  intermediateCheck = currentCpu < currentCpuBelow;
+  intermediateCheck = currentCpuAverage < currentCpuBelow;
   if (currentCpuBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
-  intermediateCheck = memoryUsageByHost > memoryAbove;
+  intermediateCheck = memoryAverage > memoryAbove;
   if (memoryAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
-  intermediateCheck = memoryUsageByHost < memoryBelow;
+  intermediateCheck = memoryAverage < memoryBelow;
   if (memoryBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
-  intermediateCheck = currentMemory > currentMemoryAbove;
+  intermediateCheck = currentMemoryAverage > currentMemoryAbove;
   if (currentMemoryAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
-  intermediateCheck = currentMemory < currentMemoryBelow;
+  intermediateCheck = currentMemoryAverage < currentMemoryBelow;
   if (currentMemoryBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
-  intermediateCheck = sessionsByHost > sessionsAbove;
+  intermediateCheck = sessionsAverage > sessionsAbove;
   if (sessionsAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
-  intermediateCheck = sessionsByHost < sessionsBelow;
+  intermediateCheck = sessionsAverage < sessionsBelow;
   if (sessionsBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
   return shouldRunAction;
@@ -109,25 +109,25 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     } = container;
     return {
       ...container,
-      pubSubResponseTime: parseFloat(pubSubResponseTime),
-      methodResponseTime: parseFloat(methodResponseTime),
-      memoryUsageByHost: parseFloat(memoryUsageByHost),
-      cpuUsageAverage: parseFloat(cpuUsageAverage),
-      sessionsByHost: parseFloat(sessionsByHost),
-      currentCpu: parseFloat(getPercentualNumber(currentCpu)),
-      currentMemory: parseFloat(getPercentualNumber(currentMemory)),
+      pubSubResponseTimeAverage: parseFloat(pubSubResponseTime),
+      methodResponseTimeAverage: parseFloat(methodResponseTime),
+      memoryAverage: parseFloat(memoryUsageByHost),
+      cpuAverage: parseFloat(cpuUsageAverage),
+      sessionsAverage: parseFloat(sessionsByHost),
+      currentCpuAverage: parseFloat(getPercentualNumber(currentCpu)),
+      currentMemoryAverage: parseFloat(getPercentualNumber(currentMemory)),
     }
   });
 
   const activeMetrics = runningContainers.reduce((avgMetrics, container, i) => {
     const {
-      pubSubResponseTime: avgPubSubResponseTime = '0',
-      methodResponseTime: avgMethodResponseTime = '0',
-      memoryUsageByHost: avgMemoryUsageByHost = '0',
-      cpuUsageAverage: avgCpuUsageAverage = '0',
-      sessionsByHost: avgSessionsByHost = '0',
-      currentCpu: avgCurrentCpu = '0',
-      currentMemory: avgCurrentMemory = '0',
+      pubSubResponseTimeAverage: avgPubSubResponseTime = '0',
+      methodResponseTimeAverage: avgMethodResponseTime = '0',
+      memoryAverage: avgMemoryUsageByHost = '0',
+      cpuAverage: avgCpuUsageAverage = '0',
+      sessionsAverage: avgSessionsByHost = '0',
+      currentCpuAverage: avgCurrentCpu = '0',
+      currentMemoryAverage: avgCurrentMemory = '0',
     } = avgMetrics;
     const {
       pubSubResponseTime = '0',
@@ -143,15 +143,18 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
     return {
       ...avgMetrics,
-      pubSubResponseTime: (parseFloat(avgPubSubResponseTime) + parseFloat(pubSubResponseTime)) / divisionBy,
-      methodResponseTime: (parseFloat(avgMethodResponseTime) + parseFloat(methodResponseTime)) / divisionBy,
-      memoryUsageByHost: (parseFloat(avgMemoryUsageByHost) + parseFloat(memoryUsageByHost)) / divisionBy,
-      cpuUsageAverage: (parseFloat(avgCpuUsageAverage) + parseFloat(cpuUsageAverage)) / divisionBy,
-      sessionsByHost: (parseFloat(avgSessionsByHost) + parseFloat(sessionsByHost)) / divisionBy,
-      currentCpu: (parseFloat(avgCurrentCpu) + parseFloat(getPercentualNumber(currentCpu))) / divisionBy,
-      currentMemory: (parseFloat(avgCurrentMemory) + parseFloat(getPercentualNumber(currentMemory))) / divisionBy,
+      pubSubResponseTimeAverage: (parseFloat(avgPubSubResponseTime) + parseFloat(pubSubResponseTime)) / divisionBy,
+      methodResponseTimeAverage: (parseFloat(avgMethodResponseTime) + parseFloat(methodResponseTime)) / divisionBy,
+      memoryAverage: (parseFloat(avgMemoryUsageByHost) + parseFloat(memoryUsageByHost)) / divisionBy,
+      cpuAverage: (parseFloat(avgCpuUsageAverage) + parseFloat(cpuUsageAverage)) / divisionBy,
+      sessionsAverage: (parseFloat(avgSessionsByHost) + parseFloat(sessionsByHost)) / divisionBy,
+      currentCpuAverage: (parseFloat(avgCurrentCpu) + parseFloat(getPercentualNumber(currentCpu))) / divisionBy,
+      currentMemoryAverage: (parseFloat(avgCurrentMemory) + parseFloat(getPercentualNumber(currentMemory))) / divisionBy,
     };
   }, {});
+
+  console.warn('activeMetricsByContainer', activeMetricsByContainer);
+  console.warn('activeMetrics', activeMetrics);
 
   const {
     minContainers = MIN_CONTAINERS,
@@ -164,7 +167,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     trySendAlertToSlack({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack);
 
   const containerToKill = activeMetricsByContainer.reduce((maxCpuContainer, container) => {
-    return !container.stopping && !container.starting && container.currentCpu > maxCpuContainer.currentCpu && container || maxCpuContainer;
+    return !container.stopping && !container.starting && container.currentCpuAverage > maxCpuContainer.currentCpuAverage && container || maxCpuContainer;
   }, activeMetricsByContainer[0]);
   const killingContainerCount = containers.reduce((acc, container) => container.stopping || container.starting ? acc + 1 : acc, 0);
   const indexContainerToKill = containers.findIndex(container => container.name === containerToKill.name);
