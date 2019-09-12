@@ -85,7 +85,7 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
   return shouldRunAction;
 };
 
-const checkKillAction = (rules, metrics) => checkAction('killWhen', rules, metrics);
+const checkKillAction = (rules, metrics) => checkAction('killWhen', rules, metrics, { andMode: false });
 
 export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const { autoscaleRules } = options;
