@@ -50,25 +50,12 @@ export const goAndLoginAPM = async (options, browser) => {
   return apm;
 };
 
-export const waitForContainers = async (amount, galaxy) => {
-  await galaxy.waitForFunction(count => {
-    const $containerList = document.querySelector('.container-list');
-    const containerItems = $containerList && $containerList.querySelectorAll('.container-item');
-    const containerItemsCount = containerItems && containerItems.length || 0;
-    return containerItemsCount === count;
-  }, {}, amount);
-};
-
 export const waitForTime = async galaxy => {
   await galaxy.waitFor(WAIT_TIMEOUT);
 };
 
 export const waitForShortTime = async galaxy => {
   await galaxy.waitFor(WAIT_SHORT_TIMEOUT);
-};
-
-export const waitForLongTime = async galaxy => {
-  await galaxy.waitFor(WAIT_LONG_TIMEOUT);
 };
 
 export const logoutGalaxy = async galaxy => {
