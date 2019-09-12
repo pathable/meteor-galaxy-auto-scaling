@@ -1,4 +1,4 @@
-import { bringToFront, getAppLink, waitForTime, times, round } from './utilities';
+import { bringToFront, getAppLink, waitForTime, times, round, getPercentualNumber } from './utilities';
 
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
@@ -10,6 +10,8 @@ const trySendAlertToSlack = ({ appLink, msgTitle, activeMetrics, activeMetricsBy
     memoryUsageByHost: `${round(activeMetrics.memoryUsageByHost)}MB`,
     cpuUsageAverage: `${round(activeMetrics.cpuUsageAverage)}%`,
     sessionsByHost: `${round(activeMetrics.sessionsByHost, 1)}%`,
+    currentCpu: `${round(activeMetrics.currentCpu, 1)}%`,
+    currentMemory: `${round(activeMetrics.currentCpu, 1)}%`,
   };
   const lastMetricsText = `${Object.entries(activeMetricsFormatted)
     .map(([key, value]) => `*${key}*\n${value}`)
@@ -26,6 +28,12 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
     cpuBelow,
     sessionsAbove,
     sessionsBelow,
+    memoryAbove,
+    memoryBelow,
+    currentCpuAbove,
+    currentCpuBelow,
+    currentMemoryAbove,
+    currentMemoryBelow,
   } = when || {};
 
   const {
@@ -33,6 +41,9 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
     methodResponseTime,
     cpuUsageAverage,
     sessionsByHost,
+    memoryUsageByHost,
+    currentCpu,
+    currentMemory,
   } = metrics;
 
   let shouldRunAction = !!when;
@@ -50,6 +61,21 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
   if (cpuAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   intermediateCheck = cpuUsageAverage < cpuBelow;
   if (cpuBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
+
+  intermediateCheck = currentCpu > currentCpuAbove;
+  if (currentCpuAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
+  intermediateCheck = currentCpu < currentCpuBelow;
+  if (currentCpuBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
+
+  intermediateCheck = memoryUsageByHost > memoryAbove;
+  if (memoryAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
+  intermediateCheck = memoryUsageByHost < memoryBelow;
+  if (memoryBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
+
+  intermediateCheck = currentMemory > currentMemoryAbove;
+  if (currentMemoryAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
+  intermediateCheck = currentMemory < currentMemoryBelow;
+  if (currentMemoryBelow != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
 
   intermediateCheck = sessionsByHost > sessionsAbove;
   if (sessionsAbove != null) shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
@@ -71,7 +97,6 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const { scaling, containers } = lastStat;
   const quantity = parseInt(lastStat.quantity, 10);
   const runningContainers = containers.filter(container => container.running);
-
   const activeMetricsByContainer = runningContainers.map(container => {
     const {
       pubSubResponseTime = '0',
@@ -79,6 +104,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       memoryUsageByHost = '0',
       cpuUsageAverage = '0',
       sessionsByHost = '0',
+      cpu: currentCpu = '0',
+      memory: currentMemory = '0',
     } = container;
     return {
       ...container,
@@ -87,6 +114,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       memoryUsageByHost: parseFloat(memoryUsageByHost),
       cpuUsageAverage: parseFloat(cpuUsageAverage),
       sessionsByHost: parseFloat(sessionsByHost),
+      currentCpu: parseFloat(getPercentualNumber(currentCpu)),
+      currentMemory: parseFloat(getPercentualNumber(currentMemory)),
     }
   });
 
@@ -97,6 +126,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       memoryUsageByHost: avgMemoryUsageByHost = '0',
       cpuUsageAverage: avgCpuUsageAverage = '0',
       sessionsByHost: avgSessionsByHost = '0',
+      currentCpu: avgCurrentCpu = '0',
+      currentMemory: avgCurrentMemory = '0',
     } = avgMetrics;
     const {
       pubSubResponseTime = '0',
@@ -104,6 +135,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       memoryUsageByHost = '0',
       cpuUsageAverage = '0',
       sessionsByHost = '0',
+      cpu: currentCpu = '0',
+      memory: currentMemory = '0',
     } = container;
 
     const divisionBy = i === containers.length - 1 && containers.length || 1;
@@ -115,6 +148,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       memoryUsageByHost: (parseFloat(avgMemoryUsageByHost) + parseFloat(memoryUsageByHost)) / divisionBy,
       cpuUsageAverage: (parseFloat(avgCpuUsageAverage) + parseFloat(cpuUsageAverage)) / divisionBy,
       sessionsByHost: (parseFloat(avgSessionsByHost) + parseFloat(sessionsByHost)) / divisionBy,
+      currentCpu: (parseFloat(avgCurrentCpu) + parseFloat(getPercentualNumber(currentCpu))) / divisionBy,
+      currentMemory: (parseFloat(avgCurrentMemory) + parseFloat(getPercentualNumber(currentMemory))) / divisionBy,
     };
   }, {});
 
@@ -129,7 +164,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     trySendAlertToSlack({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack);
 
   const containerToKill = activeMetricsByContainer.reduce((maxCpuContainer, container) => {
-    return !container.stopping && !container.starting && container.cpuUsageAverage > maxCpuContainer.cpuUsageAverage && container || maxCpuContainer;
+    return !container.stopping && !container.starting && container.currentCpu > maxCpuContainer.currentCpu && container || maxCpuContainer;
   }, activeMetricsByContainer[0]);
   const killingContainerCount = containers.reduce((acc, container) => container.stopping || container.starting ? acc + 1 : acc, 0);
   const indexContainerToKill = containers.findIndex(container => container.name === containerToKill.name);
@@ -150,7 +185,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     await waitForTime(galaxy);
   }
 
-  const shouldAddContainer = !isScalingContainer && quantity < maxContainers && checkAction('addWhen', autoscaleRules, activeMetrics);
+  const shouldAddContainer = !isScalingContainer && quantity < maxContainers &&
+    checkAction('addWhen', autoscaleRules, activeMetrics, { andMode: false });
   const loadingIndicatorSelector = '.drawer.arrow-third';
   if (shouldAddContainer) {
     const containersToAdd = quantity + containersToScale > maxContainers ? 1 : containersToScale;
@@ -171,7 +207,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     return;
   }
 
-  const shouldReduceContainer = !isScalingContainer && quantity > minContainers && checkAction('reduceWhen', autoscaleRules, activeMetrics);
+  const shouldReduceContainer = !isScalingContainer && quantity > minContainers
+    && checkAction('reduceWhen', autoscaleRules, activeMetrics);
   if (shouldReduceContainer) {
     const containersToReduce = quantity - containersToScale < minContainers ? 1 : containersToScale;
     const nextContainerCount = quantity - containersToReduce;
