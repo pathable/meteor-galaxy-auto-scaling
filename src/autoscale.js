@@ -4,7 +4,9 @@ const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
 
 const trySendAlertToSlack = ({ appLink, msgTitle, activeMetrics, activeMetricsByContainer }, options, slack) => {
+  const responseTimeAverage = round(activeMetrics.pubSubResponseTimeAverage) + round(activeMetrics.methodResponseTimeAverage);
   const activeMetricsFormatted = {
+    responseTimeAverage: `${responseTimeAverage}ms`,
     pubSubResponseTimeAverage: `${round(activeMetrics.pubSubResponseTimeAverage)}ms`,
     methodResponseTimeAverage: `${round(activeMetrics.methodResponseTimeAverage)}ms`,
     memoryAverage: `${round(activeMetrics.memoryAverage)}MB`,
