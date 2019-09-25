@@ -213,7 +213,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   }
 
   const shouldReduceContainer = !isScalingContainer && quantity > minContainers
-    && checkAction('reduceWhen', autoscaleRules, activeMetrics, { andMode: false });
+    && checkAction('reduceWhen', autoscaleRules, activeMetrics, { andMode: true });
   if (shouldReduceContainer) {
     const containersToReduce = quantity - containersToScale < minContainers ? 1 : containersToScale;
     const nextContainerCount = quantity - containersToReduce;
