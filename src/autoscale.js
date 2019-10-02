@@ -52,74 +52,74 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
   let shouldRunAction = !!when;
   if(!shouldRunAction) return false;
 
-  console.log(action, { andMode });
+  console.warn(action, { andMode });
 
   shouldRunAction = andMode;
 
   const responseTime = pubSubResponseTimeAverage + methodResponseTimeAverage;
   let intermediateCheck = responseTime > responseTimeAbove;
   if (responseTimeAbove != null) {
-    console.log('responseTimeAbove', responseTimeAbove, 'responseTime', responseTime, intermediateCheck);
+    console.warn('responseTimeAbove', responseTimeAbove, 'responseTime', responseTime, intermediateCheck);
     shouldRunAction = intermediateCheck;
   }
   intermediateCheck = responseTime < responseTimeBelow;
   if (responseTimeBelow != null) {
-    console.log('responseTimeBelow', responseTimeBelow, 'responseTime', responseTime, intermediateCheck);
+    console.warn('responseTimeBelow', responseTimeBelow, 'responseTime', responseTime, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
 
   intermediateCheck = cpuAverage > cpuAbove;
   if (cpuAbove != null) {
-    console.log('cpuAbove', cpuAbove, 'cpuAverage', cpuAverage, intermediateCheck);
+    console.warn('cpuAbove', cpuAbove, 'cpuAverage', cpuAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
   intermediateCheck = cpuAverage < cpuBelow;
   if (cpuBelow != null) {
-    console.log('cpuBelow', cpuBelow, 'cpuAverage', cpuAverage, intermediateCheck);
+    console.warn('cpuBelow', cpuBelow, 'cpuAverage', cpuAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
 
   intermediateCheck = currentCpuAverage > currentCpuAbove;
   if (currentCpuAbove != null) {
-    console.log('currentCpuAbove', currentCpuAbove, 'currentCpuAverage', currentCpuAverage, intermediateCheck);
+    console.warn('currentCpuAbove', currentCpuAbove, 'currentCpuAverage', currentCpuAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
   intermediateCheck = currentCpuAverage < currentCpuBelow;
   if (currentCpuBelow != null) {
-    console.log('currentCpuBelow', currentCpuBelow, 'currentCpuAverage', currentCpuAverage, intermediateCheck);
+    console.warn('currentCpuBelow', currentCpuBelow, 'currentCpuAverage', currentCpuAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
 
   intermediateCheck = memoryAverage > memoryAbove;
   if (memoryAbove != null) {
-    console.log('memoryAbove', memoryAbove, 'memoryAverage', memoryAverage, intermediateCheck);
+    console.warn('memoryAbove', memoryAbove, 'memoryAverage', memoryAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
   intermediateCheck = memoryAverage < memoryBelow;
   if (memoryBelow != null) {
-    console.log('memoryBelow', memoryBelow, 'memoryAverage', memoryAverage, intermediateCheck);
+    console.warn('memoryBelow', memoryBelow, 'memoryAverage', memoryAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
 
   intermediateCheck = currentMemoryAverage > currentMemoryAbove;
   if (currentMemoryAbove != null) {
-    console.log('currentMemoryAbove', currentMemoryAbove, 'currentMemoryAverage', currentMemoryAverage, intermediateCheck);
+    console.warn('currentMemoryAbove', currentMemoryAbove, 'currentMemoryAverage', currentMemoryAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
   intermediateCheck = currentMemoryAverage < currentMemoryBelow;
   if (currentMemoryBelow != null) {
-    console.log('currentMemoryBelow', currentMemoryBelow, 'currentMemoryAverage', currentMemoryAverage, intermediateCheck);
+    console.warn('currentMemoryBelow', currentMemoryBelow, 'currentMemoryAverage', currentMemoryAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
 
   intermediateCheck = sessionsAverage > sessionsAbove;
   if (sessionsAbove != null) {
-    console.log('sessionsAbove', sessionsAbove, 'sessionsAverage', sessionsAverage, intermediateCheck);
+    console.warn('sessionsAbove', sessionsAbove, 'sessionsAverage', sessionsAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
   intermediateCheck = sessionsAverage < sessionsBelow;
   if (sessionsBelow != null) {
-    console.log('sessionsBelow', sessionsBelow, 'sessionsAverage', sessionsAverage, intermediateCheck);
+    console.warn('sessionsBelow', sessionsBelow, 'sessionsAverage', sessionsAverage, intermediateCheck);
     shouldRunAction = andMode ? shouldRunAction && intermediateCheck : intermediateCheck || shouldRunAction;
   }
 
