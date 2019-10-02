@@ -1,4 +1,5 @@
 import { bringToFront, getAppLink, waitForTime, times, round, getPercentualNumber } from './utilities';
+import { WAIT_SELECTOR_TIMEOUT } from './constants';
 
 const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
@@ -238,12 +239,12 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     console.info(msgTitle);
 
     const incrementButtonSelector = '.cardinal-action.increment';
-    await galaxy.waitForSelector(incrementButtonSelector);
+    await galaxy.waitForSelector(incrementButtonSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
 
     times(containersToAdd, async () => {
       await galaxy.click(incrementButtonSelector);
     });
-    await galaxy.waitForSelector(loadingIndicatorSelector);
+    await galaxy.waitForSelector(loadingIndicatorSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
     await waitForTime(galaxy);
 
     trySendAlert({ msgTitle });
@@ -259,12 +260,12 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     console.info(msgTitle);
 
     const decrementButtonSelector = '.cardinal-action.decrement';
-    await galaxy.waitForSelector(decrementButtonSelector);
+    await galaxy.waitForSelector(decrementButtonSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
 
     times(containersToReduce, async () => {
       await galaxy.click(decrementButtonSelector);
     });
-    await galaxy.waitForSelector(loadingIndicatorSelector);
+    await galaxy.waitForSelector(loadingIndicatorSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
     await waitForTime(galaxy);
 
     trySendAlert({ msgTitle });

@@ -65,7 +65,7 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
       await apm.click('#hosts + .dropdown-toggle');
       await apm.click(containerSelector);
       const containerActiveSelector = `li[class="active ${container.name}"] a`;
-      await apm.waitForSelector(containerActiveSelector);
+      await apm.waitForSelector(containerActiveSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
       await apm.waitForSelector('.summery-inner .loading-indicator', { hidden: true, timeout: WAIT_SELECTOR_TIMEOUT });
       await waitForShortTime(apm);
       const [
