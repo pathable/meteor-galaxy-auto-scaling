@@ -35,6 +35,7 @@ export const goAndLoginAPM = async (options, browser) => {
       target.url().includes('apm.meteor.com')
     , { timeout: WAIT_SELECTOR_TIMEOUT });
   const apm = await apmTarget.page();
+  await waitForTime(apm);
   await apm.waitForSelector('button#sign-in-with-meteor', { timeout: WAIT_SELECTOR_TIMEOUT });
   await apm.click('button#sign-in-with-meteor');
   const dialogTarget = await browser.waitForTarget(target =>
