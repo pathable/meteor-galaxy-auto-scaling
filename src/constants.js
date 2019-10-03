@@ -4,4 +4,4 @@ export const WAIT_TIMEOUT = 5000;
 
 export const WAIT_LONG_TIMEOUT = 120000;
 
-export const WAIT_SELECTOR_TIMEOUT = 60000;
+export const WAIT_SELECTOR_TIMEOUT = 30000;
