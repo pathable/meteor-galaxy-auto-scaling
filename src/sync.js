@@ -173,6 +173,7 @@ export const sync = async options => {
   try {
     browser = await puppeteer.launch({
       defaultViewport: null,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
       ...(options.puppeteer || {}),
     });
 
