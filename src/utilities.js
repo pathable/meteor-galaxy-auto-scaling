@@ -21,6 +21,7 @@ export const goAndLoginGalaxy = async (options, browser) => {
   const  galaxy = await browser.newPage();
   const appUrl = getGalaxyUrl(options);
   await galaxy.goto(appUrl);
+  await waitForTime(galaxy);
 
   await login(galaxy, options);
 
@@ -62,6 +63,7 @@ export const waitForShortTime = async galaxy => {
 export const logoutGalaxy = async galaxy => {
   await bringToFront(galaxy);
   const galaxyAccountMenuSelector = '.account-menu-wrapper';
+  await galaxy.waitForSelector(galaxyAccountMenuSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
   await galaxy.click(galaxyAccountMenuSelector);
   await waitForShortTime(galaxy);
   const galaxyLogoutButtonSelector = '.account-menu .link.tertiary';
@@ -73,6 +75,7 @@ export const logoutGalaxy = async galaxy => {
 export const logoutAPM = async apm => {
   await bringToFront(apm);
   const apmAccountMenuSelector = '#login-dropdown-list';
+  await apm.waitForSelector(apmAccountMenuSelector, { timeout: WAIT_SELECTOR_TIMEOUT });
   await apm.click(apmAccountMenuSelector);
   await waitForShortTime(apm);
   const apmLogoutButtonSelector = '#login-buttons-logout';
