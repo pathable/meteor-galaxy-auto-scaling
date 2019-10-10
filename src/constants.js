@@ -1,4 +1,4 @@
-export const WAIT_SHORT_TIMEOUT = 1000;
+export const WAIT_SHORT_TIMEOUT = 1500;
 
 export const WAIT_TIMEOUT = 5000;
 
