@@ -180,7 +180,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       memory: currentMemory = '0',
     } = container;
 
-    const divisionBy = i === containers.length - 1 && containers.length || 1;
+    const divisionBy = i === runningContainers.length - 1 && runningContainers.length || 1;
 
     return {
       ...avgMetrics,
@@ -196,6 +196,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
   console.warn('activeMetricsByContainer', activeMetricsByContainer);
   console.warn('activeMetrics', activeMetrics);
+  console.warn('containers', containers.length);
+  console.warn('runningContainers', runningContainers.length);
 
   const {
     minContainers = MIN_CONTAINERS,
@@ -252,7 +254,12 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   }
 
   const shouldReduceContainer = !isScalingContainer && quantity > minContainers
-    && checkAction('reduceWhen', autoscaleRules, activeMetrics, { andMode: true });
+    && checkAction(
+        'reduceWhen',
+        autoscaleRules,
+        { ...activeMetrics, sessionsAverage: (activeMetrics.sessionsAverage * runningContainers.length) / (runningContainers.length - 1) },
+        { andMode: true }
+      );
   if (shouldReduceContainer) {
     const containersToReduce = quantity - containersToScale < minContainers ? 1 : containersToScale;
     const nextContainerCount = quantity - containersToReduce;
