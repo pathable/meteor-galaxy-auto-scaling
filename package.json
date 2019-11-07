@@ -1,11 +1,11 @@
 {
   "name": "@pathable/meteor-galaxy-auto-scaling",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "NodeJS command line tool to monitor and auto-scale Meteor Galaxy",
   "main": "dist/index.js",
   "license": "MIT",
   "bin": {
-    "mgas": "src/index.js"
+    "mgas": "dist/index.js"
   },
   "scripts": {
     "start": "nodemon --exec babel-node src/index.js --settings settings.json",
