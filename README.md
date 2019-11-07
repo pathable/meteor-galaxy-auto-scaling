@@ -1,4 +1,5 @@
 # Meteor Galaxy Auto Scaling (mgas)
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors)
 
 NodeJS command line tool to monitor and auto-scale Meteor Galaxy
 
@@ -169,3 +170,19 @@ Please open issues to discuss improvements and report bugs. Also feel free to su
 
 ## LICENSE 
 [MIT](LICENSE)
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore -->
+<table>
+  <tr>
+    <td align="center"><a href="https://www.linkedin.com/in/filipenevola/"><img src="https://avatars0.githubusercontent.com/u/437372?v=4" width="100px;" alt="Filipe Névola"/><br /><sub><b>Filipe Névola</b></sub></a><br /><a href="https://github.com/pathable/meteor-galaxy-auto-scaling/commits?author=filipenevola" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
