@@ -1,6 +1,6 @@
 {
   "name": "@pathable/meteor-galaxy-auto-scaling",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "NodeJS command line tool to monitor and auto-scale Meteor Galaxy",
   "main": "dist/index.js",
   "license": "MIT",
@@ -15,14 +15,14 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.5.5",
-    "@babel/core": "^7.5.5",
-    "@babel/node": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
     "nodemon": "^1.19.1",
     "prettier": "^1.18.2"
   },
   "dependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/node": "^7.5.5",
     "@babel/polyfill": "^7.4.4",
+    "@babel/preset-env": "^7.5.5",
     "fs-extra": "^8.1.0",
     "puppeteer": "^1.18.1",
     "slack-notify": "^0.1.7",
