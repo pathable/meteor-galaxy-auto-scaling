@@ -1,4 +1,5 @@
 # Meteor Galaxy Auto Scaling
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors)
 
 NodeJS command line tool to monitor and auto-scale Meteor Galaxy
 
@@ -70,3 +71,19 @@ The autoscaling behavior is meant to adjust smartly the containers on the Galaxy
 
 ## Fixing Puppeteer on Ubuntu 16.04
 sudo apt-get install libx11-xcb1 libxcomposite1 libxi6 libxext6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2 libpangocairo-1.0-0 libatk1.0-0 libatk-bridge2.0-0 libgtk-3-0
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore -->
+<table>
+  <tr>
+    <td align="center"><a href="https://es.linkedin.com/in/nachocodonergil"><img src="https://avatars3.githubusercontent.com/u/2581993?v=4" width="100px;" alt="Nacho Codoñer"/><br /><sub><b>Nacho Codoñer</b></sub></a><br /><a href="https://github.com/pathable/meteor-galaxy-auto-scaling/commits?author=Gywem" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
