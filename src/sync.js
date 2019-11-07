@@ -44,7 +44,7 @@ const SUPPORTED_CONTAINER_METRICS = {
   clients: { parse: value => value, format: value => value },
 };
 
-const SUPPORTED_KADIRA_METRICS = {
+const SUPPORTED_APP_METRICS = {
   pubSubResponseTime: {
     parse: getMillisecondsNumber,
     format: value => `${value}ms`,
@@ -55,7 +55,7 @@ const SUPPORTED_KADIRA_METRICS = {
   },
 };
 
-const alertKadiraMetricAboveMax = ({
+const alertAppMetricAboveMax = ({
   metricName,
   maxValue,
   data,
@@ -71,7 +71,7 @@ const alertKadiraMetricAboveMax = ({
   const metricsWithTimestamp = data.stats
     .filter(s => s.metrics[metricName])
     .map(s => ({
-      value: SUPPORTED_KADIRA_METRICS[metricName].parse(
+      value: SUPPORTED_APP_METRICS[metricName].parse(
         s.metrics[metricName],
       ),
       timestamp: s.timestamp,
@@ -83,14 +83,14 @@ const alertKadiraMetricAboveMax = ({
     slack.alert({
       text: `${appLink}: application compromised\n*${metricName}*: Latest ${
         metricsWithTimestamp.length
-      } metrics are above ${SUPPORTED_KADIRA_METRICS[
+      } metrics are above ${SUPPORTED_APP_METRICS[
         metricName
       ].format(maxValue)}\n${metricsWithTimestamp
         .map(
           valueWithTimestamp =>
             `${getFormattedTimestamp(
               valueWithTimestamp.timestamp,
-            )}: ${SUPPORTED_KADIRA_METRICS[metricName].format(
+            )}: ${SUPPORTED_APP_METRICS[metricName].format(
               valueWithTimestamp.value,
             )}`,
         )
@@ -242,7 +242,7 @@ export const sync = async options => {
     }
 
     const {
-      alertRules: { maxInContainers = [], maxInKadira = [] } = {},
+      alertRules: { maxInContainers = [], maxInApp = [] } = {},
     } = options;
     Object.entries(maxInContainers).forEach(
       ([metricName, maxValue]) => {
@@ -257,8 +257,8 @@ export const sync = async options => {
         });
       },
     );
-    Object.entries(maxInKadira).forEach(([metricName, maxValue]) => {
-      alertKadiraMetricAboveMax({
+    Object.entries(maxInApp).forEach(([metricName, maxValue]) => {
+      alertAppMetricAboveMax({
         metricName,
         maxValue,
         data,
