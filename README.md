@@ -1,5 +1,4 @@
 # Meteor Galaxy Auto Scaling (mgas)
-
 NodeJS command line tool to monitor and auto-scale Meteor Galaxy
 
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors)
