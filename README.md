@@ -16,8 +16,10 @@ Set up in your CI server or equivalent a job to call `mgas` (meteor-galaxy-auto-
  time to time, it's probably a good idea to use a very short period, like every 2 minutes then
   you will be always monitoring your containers.
   
-  If you need help configuring your CI check [our configurations examples](./CI.MD). Please open an issue if you are having a hard time then we can improve the documentation. If
-   you have already configured your CI please open a Pull Request including the instructions here.
+  If you need help configuring your CI check [our configurations examples](./CI.md). Please open
+   an issue if you are having a hard time then we can improve the documentation. If
+   you have already configured your CI please open a Pull Request including the instructions in the
+    configuration examples.
   
 First you need to install `mgas` (meteor-galaxy-auto-scaling) using yarn or npm: 
 ```
