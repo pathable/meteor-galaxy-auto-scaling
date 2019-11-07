@@ -83,7 +83,7 @@ Check the [log of changes](./CHANGELOG.md).
   },
   "minimumStats": 5,
   "puppeteer": {
-    "headless": false
+    "headless": true
   }
 }
 
@@ -160,6 +160,17 @@ You will receive an alert like this when at least `minimumStats` times in a row 
 - You will receive messages like this
 
 ![info](./docs/info.png)
+
+## Developing
+If you want to include new features that includes reading new data from Galaxy or Meteor APM you
+ will probably want to run `puppeteer` watching the actions, then change `headless` setting to
+  `false`.
+ 
+```
+  "puppeteer": {
+    "headless": false
+  }
+```
 
 ## Troubleshooting
 
