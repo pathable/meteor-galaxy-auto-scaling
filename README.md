@@ -119,6 +119,7 @@ The autoscaling (`autoscaleRules`) behavior is meant to adjust smartly the conta
 
 - An slack message is sent anytime a scaling behavior is triggered if you set a Slack Webhook, the
  messages are sent to the default webhook channel. You will receive messages like this
+ 
 ![info](./docs/auto-scaling.png)
 
 ## Alerts
@@ -177,6 +178,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- prettier-ignore -->
 <table>
   <tr>
+    <td align="center"><a href="https://www.linkedin.com/in/filipenevola/"><img src="https://avatars0.githubusercontent.com/u/437372?v=4" width="100px;" alt="Filipe Névola"/><br /><sub><b>Filipe Névola</b></sub></a><br /><a href="https://github.com/pathable/meteor-galaxy-auto-scaling/commits?author=filipenevola" title="Code">💻</a></td>
     <td align="center"><a href="https://es.linkedin.com/in/nachocodonergil"><img src="https://avatars3.githubusercontent.com/u/2581993?v=4" width="100px;" alt="Nacho Codoñer"/><br /><sub><b>Nacho Codoñer</b></sub></a><br /><a href="https://github.com/pathable/meteor-galaxy-auto-scaling/commits?author=Gywem" title="Code">💻</a></td>
   </tr>
 </table>
