@@ -4,6 +4,9 @@ NodeJS command line tool to monitor and auto-scale Meteor Galaxy
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square
 )](#contributors)
 
+⚠️ Important: we are already using it in production for at least two months but please monitor your
+ containers to be sure everything is behaving as expected and please report any issue. ⚠️
+
 ## Features
 - Monitoring: reads Galaxy and Meteor APM metrics
 - Alerts: reports containers and apps not running as expected
