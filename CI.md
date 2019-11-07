@@ -37,8 +37,8 @@ job("meteor_galaxy_auto_scaling") {
         """)
 
         shell("""
-            `yarn global bin`/mgas --settings /path/to/settings/app1.json
-            `yarn global bin`/mgas --settings /path/to/settings/app2.json
+            `yarn global bin`/mgas --settings path/to/settings/in/your/workspace/app1.json
+            `yarn global bin`/mgas --settings path/to/settings/in/your/workspace/app2.json
         """)
     }
     configure {
