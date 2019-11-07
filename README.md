@@ -27,6 +27,10 @@ mgas --settings settings.json
 ```
 You can have different settings for different purposes.
 
+
+## Updates
+Check the [log of changes](./CHANGELOG.md).
+
 ## Settings
 
 ```json
