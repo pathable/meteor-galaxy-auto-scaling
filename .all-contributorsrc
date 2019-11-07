@@ -6,6 +6,15 @@
   "commit": false,
   "contributors": [
     {
+      "login": "filipenevola",
+      "name": "Filipe Névola",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/437372?v=4",
+      "profile": "https://www.linkedin.com/in/filipenevola/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
       "login": "Gywem",
       "name": "Nacho Codoñer",
       "avatar_url": "https://avatars3.githubusercontent.com/u/2581993?v=4",
