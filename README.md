@@ -13,6 +13,11 @@ NodeJS command line tool to monitor and auto-scale Meteor Galaxy
 - Auto-scaling: take actions when specific conditions are met
 - Send slack notifications: updates, alerts and autos-scaling messages;
 
+## How it works
+We use `puppeteer` to read Galaxy and Meteor APM dashboards and then we execute actions based on
+ your
+ desired settings.
+ 
 ## How to use
 Set up in your CI server or equivalent a job to call `mgas` (meteor-galaxy-auto-scaling) command
  from
