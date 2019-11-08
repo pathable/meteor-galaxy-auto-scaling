@@ -1,0 +1,11 @@
+{
+  "extends": ["@pathable/eslint-config-pathable"],
+  "overrides": [
+    {
+      "files": ["**/*.js"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
+}

@@ -62,6 +62,7 @@ Check the [log of changes](./CHANGELOG.md).
     "channel": "#galaxy-updates" 
   },
   "alertRules": {
+    "channel": "#alerts",
     "maxInContainers": {
       "cpu": 1,
       "memory": 10,
@@ -73,6 +74,7 @@ Check the [log of changes](./CHANGELOG.md).
     }
   },
   "autoscaleRules": {
+    "channel": "#auto-scaling",
     "containersToScale": 2,
     "minContainers": 2,
     "maxContainers": 10,

@@ -4,9 +4,12 @@ import slackNotify from 'slack-notify';
 import { scrapeInfo } from './scrape-info';
 import {
   getAppLink,
-  getFormattedTimestamp, getGalaxyUrl,
+  getFormattedTimestamp,
   getMillisecondsNumber,
-  getPercentualNumber, goAndLoginAPM, goAndLoginGalaxy, logout,
+  getPercentualNumber,
+  goAndLoginAPM,
+  goAndLoginGalaxy,
+  logout,
 } from './utilities';
 import { autoscale } from './autoscale';
 
@@ -63,6 +66,7 @@ const alertAppMetricAboveMax = ({
   appLink,
   lastMetricsText,
   lastContainerText,
+  channel,
 }) => {
   if (maxValue == null) {
     return;
@@ -71,31 +75,31 @@ const alertAppMetricAboveMax = ({
   const metricsWithTimestamp = data.stats
     .filter(s => s.metrics[metricName])
     .map(s => ({
-      value: SUPPORTED_APP_METRICS[metricName].parse(
-        s.metrics[metricName],
-      ),
+      value: SUPPORTED_APP_METRICS[metricName].parse(s.metrics[metricName]),
       timestamp: s.timestamp,
     }));
 
   if (
-    metricsWithTimestamp.length && metricsWithTimestamp.map(c => c.value).every(v => v > maxValue)
+    metricsWithTimestamp.length &&
+    metricsWithTimestamp.map(c => c.value).every(v => v > maxValue)
   ) {
     slack.alert({
+      ...(channel ? { channel } : {}),
       text: `${appLink}: application compromised\n*${metricName}*: Latest ${
         metricsWithTimestamp.length
-      } metrics are above ${SUPPORTED_APP_METRICS[
-        metricName
-      ].format(maxValue)}\n${metricsWithTimestamp
+      } metrics are above ${SUPPORTED_APP_METRICS[metricName].format(
+        maxValue
+      )}\n${metricsWithTimestamp
         .map(
           valueWithTimestamp =>
             `${getFormattedTimestamp(
-              valueWithTimestamp.timestamp,
+              valueWithTimestamp.timestamp
             )}: ${SUPPORTED_APP_METRICS[metricName].format(
-              valueWithTimestamp.value,
-            )}`,
+              valueWithTimestamp.value
+            )}`
         )
         .join(
-          '\n',
+          '\n'
         )}\n*Metrics*\n${lastMetricsText}\n*Containers*\n${lastContainerText}`,
     });
   }
@@ -109,55 +113,54 @@ const alertContainerMetricAboveMax = ({
   appLink,
   lastMetricsText,
   lastContainerText,
+  channel,
 }) => {
   if (maxValue == null) {
     return;
   }
   const metricsByContainer = data.stats
-    .flatMap(s =>
-      s.containers.map(c => ({ ...c, timestamp: s.timestamp })),
-    )
+    .flatMap(s => s.containers.map(c => ({ ...c, timestamp: s.timestamp })))
     .reduce(
       (acc, c) => ({
         ...acc,
         [c.name]: [
           ...(acc[c.name] || []),
           {
-            value: SUPPORTED_CONTAINER_METRICS[metricName].parse(
-              c[metricName],
-            ),
+            value: SUPPORTED_CONTAINER_METRICS[metricName].parse(c[metricName]),
             timestamp: c.timestamp,
           },
         ],
       }),
-      {},
+      {}
     );
 
   Object.entries(metricsByContainer).forEach(
     ([containerName, valuesWithTimestamp]) => {
       if (
-        valuesWithTimestamp.length && valuesWithTimestamp.map(c => c.value).every(v => v > maxValue)
+        valuesWithTimestamp.length &&
+        valuesWithTimestamp.map(c => c.value).every(v => v > maxValue)
       ) {
         slack.alert({
+          ...(channel ? { channel } : {}),
           text: `${appLink}\n*${containerName}*: container compromised\n*${metricName}*: Latest ${
             valuesWithTimestamp.length
-          } metrics are above ${SUPPORTED_CONTAINER_METRICS[
-            metricName
-          ].format(maxValue)}\n${valuesWithTimestamp
+          } metrics are above ${SUPPORTED_CONTAINER_METRICS[metricName].format(
+            maxValue
+          )}\n${valuesWithTimestamp
             .map(
               valueWithTimestamp =>
                 `${getFormattedTimestamp(
-                  valueWithTimestamp.timestamp,
+                  valueWithTimestamp.timestamp
                 )}: ${SUPPORTED_CONTAINER_METRICS[metricName].format(
-                  valueWithTimestamp.value,
-                )}`,
+                  valueWithTimestamp.value
+                )}`
             )
             .join(
-              '\n',
+              '\n'
             )}\n*Metrics*\n${lastMetricsText}\n*Containers*\n${lastContainerText}`,
         });
       }
-    },
+    }
   );
 };
 
@@ -181,30 +184,32 @@ export const sync = async options => {
 
     await galaxy.click('.complementary');
 
-    apm  = await goAndLoginAPM(options, browser);
+    apm = await goAndLoginAPM(options, browser);
 
     const lastStat = await scrapeInfo(browser, galaxy, apm);
-    if (
-      storage.stats &&
-      storage.stats.length >= options.minimumStats
-    ) {
+    if (storage.stats && storage.stats.length >= options.minimumStats) {
       storage.stats.shift();
     }
     storage.stats.push(lastStat);
     fs.writeJSONSync(options.persistentStorage, storage);
 
-    await autoscale(lastStat, options, { slack, browser, galaxy, apm });
+    await autoscale(lastStat, options, {
+      slack,
+      browser,
+      galaxy,
+      apm,
+    });
 
     // prepare data? format?
     const data = storage;
 
-    const { infoRules: { send = false, channel } = {} } = options;
+    const { infoRules: { send = false, channel: infoChannel } = {} } = options;
 
     const appLink = getAppLink(options);
     const { containers, metrics, ...containerInfo } = lastStat;
     if (send) {
       slack.note({
-        ...(channel ? { channel } : {}),
+        ...(infoChannel ? { channel: infoChannel } : {}),
         text: appLink,
         attachments: [
           {
@@ -214,12 +219,10 @@ export const sync = async options => {
                 title,
                 value,
               })),
-              ...Object.entries(containerInfo).map(
-                ([title, value]) => ({
-                  title,
-                  value,
-                }),
-              ),
+              ...Object.entries(containerInfo).map(([title, value]) => ({
+                title,
+                value,
+              })),
               ...containers.map(container => ({
                 title: container.name,
                 value: `${container.timestamp}, ${container.clients} clients, ${container.cpu}, ${container.memory}`,
@@ -242,21 +245,24 @@ export const sync = async options => {
     }
 
     const {
-      alertRules: { maxInContainers = [], maxInApp = [] } = {},
+      alertRules: {
+        maxInContainers = [],
+        maxInApp = [],
+        channel: alertChannel,
+      } = {},
     } = options;
-    Object.entries(maxInContainers).forEach(
-      ([metricName, maxValue]) => {
-        alertContainerMetricAboveMax({
-          metricName,
-          maxValue,
-          data,
-          slack,
-          appLink,
-          lastMetricsText,
-          lastContainerText,
-        });
-      },
-    );
+    Object.entries(maxInContainers).forEach(([metricName, maxValue]) => {
+      alertContainerMetricAboveMax({
+        metricName,
+        maxValue,
+        data,
+        slack,
+        appLink,
+        lastMetricsText,
+        lastContainerText,
+        channel: alertChannel,
+      });
+    });
     Object.entries(maxInApp).forEach(([metricName, maxValue]) => {
       alertAppMetricAboveMax({
         metricName,
@@ -266,6 +272,7 @@ export const sync = async options => {
         appLink,
         lastMetricsText,
         lastContainerText,
+        channel: alertChannel,
       });
     });
 
