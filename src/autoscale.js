@@ -39,7 +39,9 @@ const trySendAlertToSlack = (
   console.log(`info: sending auto scale message to Slack`);
   slack.note({
     ...(channel ? { channel } : {}),
-    text: `${messagePrefix} ${appLink}\n${msgTitle}\n\n*Metrics*\n${lastMetricsText}\n`,
+    text: `${
+      messagePrefix ? `${messagePrefix} ` : ''
+    }${appLink}\n${msgTitle}\n\n*Metrics*\n${lastMetricsText}\n`,
   });
 };
 

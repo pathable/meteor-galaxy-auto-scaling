@@ -87,7 +87,9 @@ const alertAppMetricAboveMax = ({
     console.log(`info: sending app alert to Slack`);
     slack.alert({
       ...(channel ? { channel } : {}),
-      text: `${messagePrefix} ${appLink}: application compromised\n*${metricName}*: Latest ${
+      text: `${
+        messagePrefix ? `${messagePrefix} ` : ''
+      }${appLink}: application compromised\n*${metricName}*: Latest ${
         metricsWithTimestamp.length
       } metrics are above ${SUPPORTED_APP_METRICS[metricName].format(
         maxValue
@@ -146,7 +148,9 @@ const alertContainerMetricAboveMax = ({
         console.log(`info: sending container alert to Slack`);
         slack.alert({
           ...(channel ? { channel } : {}),
-          text: `${messagePrefix} ${appLink}\n*${containerName}*: container compromised\n*${metricName}*: Latest ${
+          text: `${
+            messagePrefix ? `${messagePrefix} ` : ''
+          }${appLink}\n*${containerName}*: container compromised\n*${metricName}*: Latest ${
             valuesWithTimestamp.length
           } metrics are above ${SUPPORTED_CONTAINER_METRICS[metricName].format(
             maxValue
@@ -227,7 +231,7 @@ export const sync = async options => {
       console.log(`info: sending note to Slack`);
       slack.note({
         ...(infoChannel ? { channel: infoChannel } : {}),
-        text: `${infoMessagePrefix} ${appLink}`,
+        text: `${infoMessagePrefix ? `${infoMessagePrefix} ` : ''}${appLink}`,
         attachments: [
           {
             fallback: `Check on Galaxy`,
