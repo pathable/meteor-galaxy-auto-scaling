@@ -173,9 +173,10 @@ const alertContainerMetricAboveMax = ({
 };
 
 export const sync = async options => {
+  console.log(`info: starting for ${options.appName}`);
   const slack = getSlack(options);
   fs.ensureFileSync(options.persistentStorage);
-  console.log('reading stored metrics');
+  console.log('info: reading stored metrics');
   const storage = fs.readJsonSync(options.persistentStorage, {
     throws: false,
   }) || { stats: [] };
@@ -308,9 +309,11 @@ export const sync = async options => {
     console.error('Error syncing', err);
     await logout(galaxy, apm);
     if (browser) await browser.close();
+    console.log(`failed: error for ${options.appName}`);
     throw err;
   } finally {
     await logout(galaxy, apm);
     if (browser) await browser.close();
+    console.log(`info: finished for ${options.appName}`);
   }
 };
