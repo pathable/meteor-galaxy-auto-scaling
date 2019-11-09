@@ -9,6 +9,10 @@ Usually you will run Meteor Galaxy Auto Scaling (mgas) in a CI server to have it
 [JobDSL](https://jenkinsci.github.io/job-dsl-plugin/) plugin is a great way to configure Jenkins
  without using the UI, this way you will have code setting up Jenkins for you automatically.
  
+ First make sure you have mgas installed in your CI server
+ `yarn global add @pathable/meteor-galaxy-auto-scaling`, ideally you would create a job also for
+  this then you could easily update.
+  
  Follow one example of how to set up `mgas` with this plugin to run every two minutes to auto
  -scale two different apps.
 ```
@@ -29,13 +33,7 @@ job("meteor_galaxy_auto_scaling") {
         }
     }
 
-    label('meteor-galaxy-auto-scaling')
-
     steps {
-        shell("""
-            yarn global add @pathable/meteor-galaxy-auto-scaling
-        """)
-
         shell("""
             `yarn global bin`/mgas --settings path/to/settings/in/your/workspace/app1.json
             `yarn global bin`/mgas --settings path/to/settings/in/your/workspace/app2.json
@@ -49,6 +47,12 @@ job("meteor_galaxy_auto_scaling") {
         }
     }
 }
+```
+
+You can also include a label setting if you want to run this process in a different Jenkins slave
+ node. 
+```
+    label('meteor-galaxy-auto-scaling')
 ```
 
 ### Other CIs
