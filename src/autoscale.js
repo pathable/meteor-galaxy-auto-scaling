@@ -12,7 +12,7 @@ const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
 
 const trySendAlertToSlack = (
-  { appLink, msgTitle, activeMetrics, channel },
+  { appLink, msgTitle, activeMetrics, channel, messagePrefix },
   options,
   slack
 ) => {
@@ -36,9 +36,10 @@ const trySendAlertToSlack = (
   const lastMetricsText = `${Object.entries(activeMetricsFormatted)
     .map(([key, value]) => `*${key}*\n${value}`)
     .join('\n')}`;
+  console.log(`info: sending auto scale message to Slack`);
   slack.note({
     ...(channel ? { channel } : {}),
-    text: `${appLink}\n${msgTitle}\n\n*Metrics*\n${lastMetricsText}\n`,
+    text: `${messagePrefix} ${appLink}\n${msgTitle}\n\n*Metrics*\n${lastMetricsText}\n`,
   });
 };
 
@@ -247,6 +248,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const { autoscaleRules } = options;
   if (!autoscaleRules) return false;
 
+  console.log('info: checking auto scaling metrics');
   await bringToFront(galaxy);
 
   const appLink = getAppLink(options);
@@ -336,12 +338,20 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     maxContainers = MAX_CONTAINERS,
     containersToScale = 1,
     channel,
+    messagePrefix,
   } = autoscaleRules;
   const isScalingContainer = scaling;
 
   const trySendAlert = ({ msgTitle }) =>
     trySendAlertToSlack(
-      { appLink, msgTitle, activeMetrics, activeMetricsByContainer, channel },
+      {
+        appLink,
+        msgTitle,
+        activeMetrics,
+        activeMetricsByContainer,
+        channel,
+        messagePrefix,
+      },
       options,
       slack
     );

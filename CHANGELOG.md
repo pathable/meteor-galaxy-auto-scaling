@@ -10,6 +10,19 @@ N/A
 
 * TDB
 
+## v0.0.12, 2019-11-09
+
+### Breaking changes
+N/A
+
+### Migration Steps
+N/A
+
+### Changes
+
+* supports message prefix on each type of message
+* logs for main actions to show if puppeteer is working as expected
+
 ## v0.0.11, 2019-11-08
 
 ### Breaking changes

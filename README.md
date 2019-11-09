@@ -59,10 +59,11 @@ Check the [log of changes](./CHANGELOG.md).
   "persistentStorage": "full path to where we want to storage scrapped info",
   "infoRules": {
     "send": true,   
-    "channel": "#galaxy-updates" 
+    "channel": "#galaxy-updates"
   },
   "alertRules": {
     "channel": "#alerts",
+    "messagePrefix": "@channel",
     "maxInContainers": {
       "cpu": 1,
       "memory": 10,
