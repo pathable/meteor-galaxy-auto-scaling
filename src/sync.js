@@ -67,6 +67,7 @@ const alertAppMetricAboveMax = ({
   lastMetricsText,
   lastContainerText,
   channel,
+  messagePrefix,
 }) => {
   if (maxValue == null) {
     return;
@@ -83,9 +84,10 @@ const alertAppMetricAboveMax = ({
     metricsWithTimestamp.length &&
     metricsWithTimestamp.map(c => c.value).every(v => v > maxValue)
   ) {
+    console.log(`info: sending app alert to Slack`);
     slack.alert({
       ...(channel ? { channel } : {}),
-      text: `${appLink}: application compromised\n*${metricName}*: Latest ${
+      text: `${messagePrefix} ${appLink}: application compromised\n*${metricName}*: Latest ${
         metricsWithTimestamp.length
       } metrics are above ${SUPPORTED_APP_METRICS[metricName].format(
         maxValue
@@ -114,6 +116,7 @@ const alertContainerMetricAboveMax = ({
   lastMetricsText,
   lastContainerText,
   channel,
+  messagePrefix,
 }) => {
   if (maxValue == null) {
     return;
@@ -140,9 +143,10 @@ const alertContainerMetricAboveMax = ({
         valuesWithTimestamp.length &&
         valuesWithTimestamp.map(c => c.value).every(v => v > maxValue)
       ) {
+        console.log(`info: sending container alert to Slack`);
         slack.alert({
           ...(channel ? { channel } : {}),
-          text: `${appLink}\n*${containerName}*: container compromised\n*${metricName}*: Latest ${
+          text: `${messagePrefix} ${appLink}\n*${containerName}*: container compromised\n*${metricName}*: Latest ${
             valuesWithTimestamp.length
           } metrics are above ${SUPPORTED_CONTAINER_METRICS[metricName].format(
             maxValue
@@ -167,6 +171,7 @@ const alertContainerMetricAboveMax = ({
 export const sync = async options => {
   const slack = getSlack(options);
   fs.ensureFileSync(options.persistentStorage);
+  console.log('reading stored metrics');
   const storage = fs.readJsonSync(options.persistentStorage, {
     throws: false,
   }) || { stats: [] };
@@ -174,17 +179,22 @@ export const sync = async options => {
   let galaxy = null;
   let apm = null;
   try {
+    console.log('info: launching puppeteer');
     browser = await puppeteer.launch({
       defaultViewport: null,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       ...(options.puppeteer || {}),
     });
 
+    console.log('info: authenticating on Galaxy');
     galaxy = await goAndLoginGalaxy(options, browser);
+    console.log('success: Galaxy log in');
 
     await galaxy.click('.complementary');
 
+    console.log('info: authenticating on Meteor APM');
     apm = await goAndLoginAPM(options, browser);
+    console.log('success: Meteor APM log in');
 
     const lastStat = await scrapeInfo(browser, galaxy, apm);
     if (storage.stats && storage.stats.length >= options.minimumStats) {
@@ -203,14 +213,21 @@ export const sync = async options => {
     // prepare data? format?
     const data = storage;
 
-    const { infoRules: { send = false, channel: infoChannel } = {} } = options;
+    const {
+      infoRules: {
+        send = false,
+        channel: infoChannel,
+        messagePrefix: infoMessagePrefix,
+      } = {},
+    } = options;
 
     const appLink = getAppLink(options);
     const { containers, metrics, ...containerInfo } = lastStat;
     if (send) {
+      console.log(`info: sending note to Slack`);
       slack.note({
         ...(infoChannel ? { channel: infoChannel } : {}),
-        text: appLink,
+        text: `${infoMessagePrefix} ${appLink}`,
         attachments: [
           {
             fallback: `Check on Galaxy`,
@@ -241,6 +258,9 @@ export const sync = async options => {
 
     // not enough data to send alerts
     if (storage.stats.length < options.minimumStats) {
+      console.log(
+        `info: minimum stats (${options.minimumStats}) is not available yet, we have ${storage.stats.length}`
+      );
       return data;
     }
 
@@ -249,6 +269,7 @@ export const sync = async options => {
         maxInContainers = [],
         maxInApp = [],
         channel: alertChannel,
+        messagePrefix: alertMessagePrefix,
       } = {},
     } = options;
     Object.entries(maxInContainers).forEach(([metricName, maxValue]) => {
@@ -261,6 +282,7 @@ export const sync = async options => {
         lastMetricsText,
         lastContainerText,
         channel: alertChannel,
+        messagePrefix: alertMessagePrefix,
       });
     });
     Object.entries(maxInApp).forEach(([metricName, maxValue]) => {
@@ -273,6 +295,7 @@ export const sync = async options => {
         lastMetricsText,
         lastContainerText,
         channel: alertChannel,
+        messagePrefix: alertMessagePrefix,
       });
     });
 
