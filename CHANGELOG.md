@@ -10,25 +10,19 @@ N/A
 
 * TDB
 
+## v0.0.14, 2019-11-09
+
+### Changes
+
+* improves logs 
+
 ## v0.0.13, 2019-11-09
-
-### Breaking changes
-N/A
-
-### Migration Steps
-N/A
 
 ### Changes
 
 * improves message prefix 
 
 ## v0.0.12, 2019-11-09
-
-### Breaking changes
-N/A
-
-### Migration Steps
-N/A
 
 ### Changes
 
@@ -37,12 +31,6 @@ N/A
 
 ## v0.0.11, 2019-11-08
 
-### Breaking changes
-N/A
-
-### Migration Steps
-N/A
-
 ### Changes
 
 * supports Slack channel override for every message
@@ -50,12 +38,6 @@ N/A
 * sets up prettier and eslint
 
 ## v0.0.10, 2019-11-07
-
-### Breaking changes
-N/A
-
-### Migration Steps
-N/A
 
 ### Changes
 
