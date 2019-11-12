@@ -397,6 +397,10 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   } = autoscaleRules;
   const isScalingContainer = scaling;
 
+  if (isScalingContainer) {
+    console.info(`Already scaling from previous actions`);
+  }
+
   const trySendAlert = ({ msgTitle }) =>
     trySendAlertToSlack(
       {
@@ -413,7 +417,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
   const loadingIndicatorSelector = '.drawer.arrow-third';
 
-  if (runningContainersQuantity < minContainers) {
+  if (!isScalingContainer && runningContainersQuantity < minContainers) {
     const adding = minContainers - runningContainersQuantity;
     console.info(`Below minimum of containers, adding ${adding}`);
     await scaleUp({
@@ -426,7 +430,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     return true;
   }
 
-  if (runningContainersQuantity > maxContainers) {
+  if (!isScalingContainer && runningContainersQuantity > maxContainers) {
     const reducing = runningContainersQuantity - maxContainers;
     console.info(`Above maximum of containers, reducing ${reducing}`);
     await scaleDown({
