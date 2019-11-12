@@ -413,7 +413,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
   const loadingIndicatorSelector = '.drawer.arrow-third';
 
-  if (minContainers < runningContainersQuantity) {
+  if (runningContainersQuantity < minContainers) {
     const adding = minContainers - runningContainersQuantity;
     console.info(`Below minimum of containers, adding ${adding}`);
     await scaleUp({
@@ -426,7 +426,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     return true;
   }
 
-  if (maxContainers > runningContainersQuantity) {
+  if (runningContainersQuantity > maxContainers) {
     const reducing = runningContainersQuantity - maxContainers;
     console.info(`Above maximum of containers, reducing ${reducing}`);
     await scaleDown({
