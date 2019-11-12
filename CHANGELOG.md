@@ -10,6 +10,13 @@ N/A
 
 * TDB
 
+## v0.0.16, 2019-11-12
+
+### Changes
+
+* fixes minimum or maximum containers if the number of running containers is not in the
+ informed range  
+
 ## v0.0.15, 2019-11-12
 
 ### Changes
