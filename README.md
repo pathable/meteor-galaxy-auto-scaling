@@ -117,7 +117,7 @@ The autoscaling (`autoscaleRules`) behavior is meant to adjust smartly the conta
   - `reduce` containers (conditions are configured on `reduceWhen` json key);
   - `kill` containers (conditions are configured on `killWhen` json key).
 
-- The conditions available are: "[responseTime|cpu|memory|sessions][Above|Below]".
+- The conditions available are: "[responseTime|cpu|memory|sessions|currentCpu|currentMemory][Above|Below]". Check out to which values refer for each: [from Galaxy Panel](https://user-images.githubusercontent.com/2581993/68477766-26baa380-0226-11ea-81da-c0b635f717d6.png) and [APM panel](https://user-images.githubusercontent.com/2581993/68478308-764d9f00-0227-11ea-94b0-dab7dec21529.png).
 
 - The conditions express the property average on the active containers. The active containers are
  those that are running, the ones starting or stopping are ignored.
