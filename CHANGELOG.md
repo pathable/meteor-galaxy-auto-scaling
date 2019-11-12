@@ -10,6 +10,12 @@ N/A
 
 * TDB
 
+## v0.0.17, 2019-11-12
+
+### Changes
+
+* does not execute multiple scale actions in parallel  
+
 ## v0.0.16, 2019-11-12
 
 ### Changes
