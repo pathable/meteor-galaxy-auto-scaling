@@ -10,6 +10,14 @@ N/A
 
 * TDB
 
+## v0.0.15, 2019-11-12
+
+### Changes
+
+* supports remote configuration
+* adjusts to minimum or maximum containers if the number of running containers is not in the
+ informed range  
+
 ## v0.0.14, 2019-11-09
 
 ### Changes

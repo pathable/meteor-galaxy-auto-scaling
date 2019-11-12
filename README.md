@@ -178,6 +178,20 @@ You will receive an alert like this when at least `minimumStats` times in a row 
 
 ![info](./docs/info.png)
 
+## Advanced
+### Remote settings
+If you need to have dynamic settings coming from a external location, like an API, you can
+ configure: 
+ ```json
+"remote": {
+    "url": "https://yourapi.com/v1/auto-scaling?yourkey=XXX&anySetting=YYY"
+}
+```
+Then the JSON returned by this API will be merged (using `lodash.merge`) with your local settings
+. If the request to this URL throws an error then the local settings will be used anyway and a
+ `console.error` (`Error getting remote options from ${url}`)
+ will be printed.
+
 ## Developing
 If you want to include new features that includes reading new data from Galaxy or Meteor APM you
  will probably want to run `puppeteer` watching the actions, then change `headless` setting to

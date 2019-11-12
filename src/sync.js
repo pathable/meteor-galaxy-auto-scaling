@@ -1,5 +1,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs-extra';
+import rp from 'request-promise';
+import merge from 'lodash.merge';
 import slackNotify from 'slack-notify';
 import { scrapeInfo } from './scrape-info';
 import {
@@ -172,8 +174,23 @@ const alertContainerMetricAboveMax = ({
   );
 };
 
-export const sync = async options => {
+export const sync = async optionsParam => {
+  console.log(`info: local options ${JSON.stringify(optionsParam)}`);
+  const { remote } = optionsParam || {};
+  let remoteOptions = {};
+  if (remote && remote.url) {
+    console.log(`info: getting config from remote ${remote.url}`);
+    try {
+      remoteOptions = JSON.parse(await rp(remote.url));
+    } catch (e) {
+      console.error(`Error getting remote options from ${remote.url}`, e);
+    }
+    console.log(`info: remote options ${JSON.stringify(remoteOptions)}`);
+  }
+  const options = merge(optionsParam, remoteOptions);
   console.log(`info: starting for ${options.appName}`);
+  console.log(`info: options ${JSON.stringify(options)}`);
+
   const slack = getSlack(options);
   fs.ensureFileSync(options.persistentStorage);
   console.log('info: reading stored metrics');

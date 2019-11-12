@@ -246,6 +246,58 @@ const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
 const checkKillAction = (rules, metrics) =>
   checkAction('killWhen', rules, metrics, { andMode: true });
 
+async function scaleUp({
+  scaleTo,
+  adding,
+  galaxy,
+  loadingIndicatorSelector,
+  trySendAlert,
+}) {
+  const msgTitle = `Scaling up containers to *${scaleTo}* (${adding} more)`;
+  console.info(msgTitle);
+
+  const incrementButtonSelector = '.cardinal-action.increment';
+  await galaxy.waitForSelector(incrementButtonSelector, {
+    timeout: WAIT_SELECTOR_TIMEOUT,
+  });
+
+  times(adding, async () => {
+    await galaxy.click(incrementButtonSelector);
+  });
+  await galaxy.waitForSelector(loadingIndicatorSelector, {
+    timeout: WAIT_SELECTOR_TIMEOUT,
+  });
+  await waitForTime(galaxy);
+
+  trySendAlert({ msgTitle });
+}
+
+async function scaleDown({
+  scaleTo,
+  reducing,
+  galaxy,
+  loadingIndicatorSelector,
+  trySendAlert,
+}) {
+  const msgTitle = `Scaling down containers to *${scaleTo}* (${reducing} less)`;
+  console.info(msgTitle);
+
+  const decrementButtonSelector = '.cardinal-action.decrement';
+  await galaxy.waitForSelector(decrementButtonSelector, {
+    timeout: WAIT_SELECTOR_TIMEOUT,
+  });
+
+  times(reducing, async () => {
+    await galaxy.click(decrementButtonSelector);
+  });
+  await galaxy.waitForSelector(loadingIndicatorSelector, {
+    timeout: WAIT_SELECTOR_TIMEOUT,
+  });
+  await waitForTime(galaxy);
+
+  trySendAlert({ msgTitle });
+}
+
 export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const { autoscaleRules } = options;
   if (!autoscaleRules) return false;
@@ -333,7 +385,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   console.warn('activeMetricsByContainer', activeMetricsByContainer);
   console.warn('activeMetrics', activeMetrics);
   console.warn('containers', containers.length);
-  console.warn('runningContainers', runningContainers.length);
+  const runningContainersQuantity = runningContainers.length;
+  console.warn('runningContainers', runningContainersQuantity);
 
   const {
     minContainers = MIN_CONTAINERS,
@@ -357,6 +410,34 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       options,
       slack
     );
+
+  const loadingIndicatorSelector = '.drawer.arrow-third';
+
+  if (minContainers < runningContainersQuantity) {
+    const adding = minContainers - runningContainersQuantity;
+    console.info(`Below minimum of containers, adding ${adding}`);
+    await scaleUp({
+      scaleTo: minContainers,
+      adding,
+      galaxy,
+      loadingIndicatorSelector,
+      trySendAlert,
+    });
+    return true;
+  }
+
+  if (maxContainers > runningContainersQuantity) {
+    const reducing = runningContainersQuantity - maxContainers;
+    console.info(`Above maximum of containers, reducing ${reducing}`);
+    await scaleDown({
+      scaleTo: maxContainers,
+      reducing,
+      galaxy,
+      loadingIndicatorSelector,
+      trySendAlert,
+    });
+    return true;
+  }
 
   const containerToKill = activeMetricsByContainer.reduce(
     (maxCpuContainer, container) =>
@@ -403,28 +484,17 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     checkAction('addWhen', autoscaleRules, activeMetrics, {
       andMode: false,
     });
-  const loadingIndicatorSelector = '.drawer.arrow-third';
   if (shouldAddContainer) {
     const containersToAdd =
       quantity + containersToScale > maxContainers ? 1 : containersToScale;
     const nextContainerCount = quantity + containersToAdd;
-    const msgTitle = `Scaling up containers to *${nextContainerCount}* (${containersToAdd} more)`;
-    console.info(msgTitle);
-
-    const incrementButtonSelector = '.cardinal-action.increment';
-    await galaxy.waitForSelector(incrementButtonSelector, {
-      timeout: WAIT_SELECTOR_TIMEOUT,
+    await scaleUp({
+      scaleTo: nextContainerCount,
+      adding: containersToAdd,
+      galaxy,
+      loadingIndicatorSelector,
+      trySendAlert,
     });
-
-    times(containersToAdd, async () => {
-      await galaxy.click(incrementButtonSelector);
-    });
-    await galaxy.waitForSelector(loadingIndicatorSelector, {
-      timeout: WAIT_SELECTOR_TIMEOUT,
-    });
-    await waitForTime(galaxy);
-
-    trySendAlert({ msgTitle });
     return true;
   }
 
@@ -437,8 +507,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       {
         ...activeMetrics,
         sessionsAverage:
-          (activeMetrics.sessionsAverage * runningContainers.length) /
-          (runningContainers.length - 1),
+          (activeMetrics.sessionsAverage * runningContainersQuantity) /
+          (runningContainersQuantity - 1),
       },
       { andMode: true }
     );
@@ -446,23 +516,13 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     const containersToReduce =
       quantity - containersToScale < minContainers ? 1 : containersToScale;
     const nextContainerCount = quantity - containersToReduce;
-    const msgTitle = `Scaling down containers to *${nextContainerCount}* (${containersToReduce} less)`;
-    console.info(msgTitle);
-
-    const decrementButtonSelector = '.cardinal-action.decrement';
-    await galaxy.waitForSelector(decrementButtonSelector, {
-      timeout: WAIT_SELECTOR_TIMEOUT,
+    await scaleDown({
+      scaleTo: nextContainerCount,
+      reducing: containersToReduce,
+      galaxy,
+      loadingIndicatorSelector,
+      trySendAlert,
     });
-
-    times(containersToReduce, async () => {
-      await galaxy.click(decrementButtonSelector);
-    });
-    await galaxy.waitForSelector(loadingIndicatorSelector, {
-      timeout: WAIT_SELECTOR_TIMEOUT,
-    });
-    await waitForTime(galaxy);
-
-    trySendAlert({ msgTitle });
     return true;
   }
   return false;
