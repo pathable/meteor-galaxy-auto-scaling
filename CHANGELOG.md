@@ -10,6 +10,13 @@ N/A
 
 * TDB
 
+## v0.0.18, 2019-11-12
+
+### Changes
+
+* improves logs
+* response times are not independent, one for pub/sub and one for methods  
+
 ## v0.0.17, 2019-11-12
 
 ### Changes
