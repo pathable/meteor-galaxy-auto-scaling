@@ -45,206 +45,146 @@ const trySendAlertToSlack = (
   });
 };
 
-const checkAction = (action, rules, metrics, { andMode = true } = {}) => {
-  const when = rules[action];
-  const {
-    responseTimeAbove,
-    responseTimeBelow,
-    cpuAbove,
-    cpuBelow,
-    sessionsAbove,
-    sessionsBelow,
-    memoryAbove,
-    memoryBelow,
-    currentCpuAbove,
-    currentCpuBelow,
-    currentMemoryAbove,
-    currentMemoryBelow,
-  } = when || {};
+const ALL_CHECKS = [
+  {
+    metricField: 'pubSubResponseTimeAverage',
+    whenField: 'pubSubResponseTimeAbove',
+    greaterThan: true,
+  },
+  {
+    metricField: 'pubSubResponseTimeAverage',
+    whenField: 'pubSubResponseTimeBelow',
+    greaterThan: false,
+  },
+  {
+    metricField: 'methodResponseTimeAverage',
+    whenField: 'methodResponseTimeAbove',
+    greaterThan: true,
+  },
+  {
+    metricField: 'methodResponseTimeAverage',
+    whenField: 'methodResponseTimeBelow',
+    greaterThan: false,
+  },
+  {
+    metricField: 'cpuAverage',
+    whenField: 'cpuAbove',
+    greaterThan: true,
+  },
+  {
+    metricField: 'cpuAverage',
+    whenField: 'cpuBelow',
+    greaterThan: false,
+  },
+  {
+    metricField: 'currentCpuAverage',
+    whenField: 'currentCpuAbove',
+    greaterThan: true,
+  },
+  {
+    metricField: 'currentCpuAverage',
+    whenField: 'currentCpuBelow',
+    greaterThan: false,
+  },
+  {
+    metricField: 'memoryAverage',
+    whenField: 'memoryAbove',
+    greaterThan: true,
+  },
+  {
+    metricField: 'memoryAverage',
+    whenField: 'memoryBelow',
+    greaterThan: false,
+  },
+  {
+    metricField: 'currentMemoryAverage',
+    whenField: 'currentMemoryAbove',
+    greaterThan: true,
+  },
+  {
+    metricField: 'currentMemoryAverage',
+    whenField: 'currentMemoryBelow',
+    greaterThan: false,
+  },
+  {
+    metricField: 'sessionsAverage',
+    whenField: 'sessionsAbove',
+    greaterThan: true,
+  },
+  {
+    metricField: 'sessionsAverage',
+    whenField: 'sessionsBelow',
+    greaterThan: false,
+  },
+];
 
-  const {
-    pubSubResponseTimeAverage,
-    methodResponseTimeAverage,
-    cpuAverage,
-    sessionsAverage,
-    memoryAverage,
-    currentCpuAverage,
-    currentMemoryAverage,
-  } = metrics;
+function checkResultToText(scaledSuccessChecks) {
+  return `${scaledSuccessChecks
+    .map(
+      c =>
+        `${c.metricField} ${c.metricValue} is ${
+          c.greaterThan ? 'greater than' : 'less than'
+        } ${c.whenField} ${c.whenValue}`
+    )
+    .join(', ')}`;
+}
 
-  let shouldRunAction = !!when;
-  if (!shouldRunAction) return false;
+const checkAction = (action, rules, metricsParam, { andMode = true } = {}) => {
+  const when = rules[action] || {};
+  const metrics = metricsParam || {};
 
-  console.warn(action, { andMode });
-
-  shouldRunAction = andMode;
-
-  const responseTime = pubSubResponseTimeAverage + methodResponseTimeAverage;
-  let intermediateCheck = responseTime > responseTimeAbove;
-  if (responseTimeAbove != null) {
-    console.warn(
-      'responseTimeAbove',
-      responseTimeAbove,
-      'responseTime',
-      responseTime,
-      intermediateCheck
-    );
-    shouldRunAction = intermediateCheck;
+  const checksConfigured = ALL_CHECKS.map(check =>
+    when[check.whenField] == null ? null : check
+  ).filter(Boolean);
+  if (!checksConfigured.length) {
+    return false;
   }
-  intermediateCheck = responseTime < responseTimeBelow;
-  if (responseTimeBelow != null) {
-    console.warn(
-      'responseTimeBelow',
-      responseTimeBelow,
-      'responseTime',
-      responseTime,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
-  }
+  const scaledSuccessChecks = checksConfigured
+    .map(check => {
+      const metricValue = +metrics[check.metricField];
+      const whenValue = +when[check.whenField];
+      const text = `info: auto-scale: ${action}: ${
+        check.metricField
+      } ${metricValue} is ${check.greaterThan ? 'greater than' : 'less than'} ${
+        check.whenField
+      } ${whenValue} => `;
+      if (check.greaterThan) {
+        const isGreater = metricValue > whenValue;
+        console.log(`${text}${isGreater ? 'YES' : 'NO'}`);
+        return isGreater
+          ? {
+              ...check,
+              metricValue,
+              whenValue,
+            }
+          : null;
+      }
 
-  intermediateCheck = cpuAverage > cpuAbove;
-  if (cpuAbove != null) {
-    console.warn(
-      'cpuAbove',
-      cpuAbove,
-      'cpuAverage',
-      cpuAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
-  }
-  intermediateCheck = cpuAverage < cpuBelow;
-  if (cpuBelow != null) {
-    console.warn(
-      'cpuBelow',
-      cpuBelow,
-      'cpuAverage',
-      cpuAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
-  }
+      const isLess = metricValue < whenValue;
+      console.log(`${text}${isLess ? 'YES' : 'NO'}`);
+      return isLess
+        ? {
+            ...check,
+            metricValue,
+            whenValue,
+          }
+        : null;
+    })
+    .filter(Boolean);
 
-  intermediateCheck = currentCpuAverage > currentCpuAbove;
-  if (currentCpuAbove != null) {
-    console.warn(
-      'currentCpuAbove',
-      currentCpuAbove,
-      'currentCpuAverage',
-      currentCpuAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
-  }
-  intermediateCheck = currentCpuAverage < currentCpuBelow;
-  if (currentCpuBelow != null) {
-    console.warn(
-      'currentCpuBelow',
-      currentCpuBelow,
-      'currentCpuAverage',
-      currentCpuAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
-  }
-
-  intermediateCheck = memoryAverage > memoryAbove;
-  if (memoryAbove != null) {
-    console.warn(
-      'memoryAbove',
-      memoryAbove,
-      'memoryAverage',
-      memoryAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
-  }
-  intermediateCheck = memoryAverage < memoryBelow;
-  if (memoryBelow != null) {
-    console.warn(
-      'memoryBelow',
-      memoryBelow,
-      'memoryAverage',
-      memoryAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
+  let check = false;
+  if (andMode) {
+    check = scaledSuccessChecks.length === checksConfigured.length;
+  } else {
+    check = scaledSuccessChecks.length > 0;
   }
 
-  intermediateCheck = currentMemoryAverage > currentMemoryAbove;
-  if (currentMemoryAbove != null) {
-    console.warn(
-      'currentMemoryAbove',
-      currentMemoryAbove,
-      'currentMemoryAverage',
-      currentMemoryAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
+  if (check) {
+    console.log(`action: ${action} ${checkResultToText(scaledSuccessChecks)}`);
+    return scaledSuccessChecks;
   }
-  intermediateCheck = currentMemoryAverage < currentMemoryBelow;
-  if (currentMemoryBelow != null) {
-    console.warn(
-      'currentMemoryBelow',
-      currentMemoryBelow,
-      'currentMemoryAverage',
-      currentMemoryAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
-  }
-
-  intermediateCheck = sessionsAverage > sessionsAbove;
-  if (sessionsAbove != null) {
-    console.warn(
-      'sessionsAbove',
-      sessionsAbove,
-      'sessionsAverage',
-      sessionsAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
-  }
-  intermediateCheck = sessionsAverage < sessionsBelow;
-  if (sessionsBelow != null) {
-    console.warn(
-      'sessionsBelow',
-      sessionsBelow,
-      'sessionsAverage',
-      sessionsAverage,
-      intermediateCheck
-    );
-    shouldRunAction = andMode
-      ? shouldRunAction && intermediateCheck
-      : intermediateCheck || shouldRunAction;
-  }
-
-  return shouldRunAction;
+  return null;
 };
-
-const checkKillAction = (rules, metrics) =>
-  checkAction('killWhen', rules, metrics, { andMode: true });
 
 async function scaleUp({
   scaleTo,
@@ -252,9 +192,16 @@ async function scaleUp({
   galaxy,
   loadingIndicatorSelector,
   trySendAlert,
+  options,
+  reason,
 }) {
-  const msgTitle = `Scaling up containers to *${scaleTo}* (${adding} more)`;
+  const msgTitle = `Scaling up containers to *${scaleTo}* (${adding} more): ${reason}`;
   console.info(msgTitle);
+
+  if (options.simulation) {
+    console.info(`simulation: Scaling up`);
+    return;
+  }
 
   const incrementButtonSelector = '.cardinal-action.increment';
   await galaxy.waitForSelector(incrementButtonSelector, {
@@ -278,9 +225,16 @@ async function scaleDown({
   galaxy,
   loadingIndicatorSelector,
   trySendAlert,
+  options,
+  reason,
 }) {
-  const msgTitle = `Scaling down containers to *${scaleTo}* (${reducing} less)`;
+  const msgTitle = `Scaling down containers to *${scaleTo}* (${reducing} less): ${reason}`;
   console.info(msgTitle);
+
+  if (options.simulation) {
+    console.info(`simulation: Scaling down`);
+    return;
+  }
 
   const decrementButtonSelector = '.cardinal-action.decrement';
   await galaxy.waitForSelector(decrementButtonSelector, {
@@ -382,11 +336,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     };
   }, {});
 
-  console.warn('activeMetricsByContainer', activeMetricsByContainer);
-  console.warn('activeMetrics', activeMetrics);
-  console.warn('containers', containers.length);
   const runningContainersQuantity = runningContainers.length;
-  console.warn('runningContainers', runningContainersQuantity);
 
   const {
     minContainers = MIN_CONTAINERS,
@@ -398,7 +348,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const isScalingContainer = scaling;
 
   if (isScalingContainer) {
-    console.info(`Already scaling from previous actions`);
+    console.info(`info: Already scaling from previous actions`);
   }
 
   const trySendAlert = ({ msgTitle }) =>
@@ -419,26 +369,32 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
   if (!isScalingContainer && runningContainersQuantity < minContainers) {
     const adding = minContainers - runningContainersQuantity;
-    console.info(`Below minimum of containers, adding ${adding}`);
+    const msg = `Below minimum of containers, adding ${adding}`;
+    console.info(msg);
     await scaleUp({
       scaleTo: minContainers,
       adding,
       galaxy,
       loadingIndicatorSelector,
       trySendAlert,
+      options,
+      reason: msg,
     });
     return true;
   }
 
   if (!isScalingContainer && runningContainersQuantity > maxContainers) {
     const reducing = runningContainersQuantity - maxContainers;
-    console.info(`Above maximum of containers, reducing ${reducing}`);
+    const msg = `Above maximum of containers, reducing ${reducing}`;
+    console.info(msg);
     await scaleDown({
       scaleTo: maxContainers,
       reducing,
       galaxy,
       loadingIndicatorSelector,
       trySendAlert,
+      options,
+      reason: msg,
     });
     return true;
   }
@@ -460,34 +416,52 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const indexContainerToKill = containers.findIndex(
     container => container.name === containerToKill.name
   );
+
+  const checksOrNull = checkAction(
+    'killWhen',
+    autoscaleRules,
+    containerToKill,
+    { andMode: true }
+  );
   const shouldKillContainer =
     killingContainerCount + 1 !== quantity &&
     indexContainerToKill > -1 &&
     containerToKill &&
-    checkKillAction(autoscaleRules, containerToKill);
+    checksOrNull;
 
   if (shouldKillContainer) {
-    await galaxy.$eval(
-      `.container-item:nth-child(${indexContainerToKill + 1})`,
-      item => {
-        const $killButton = item.querySelector('.icon-power');
-        if ($killButton) {
-          $killButton.click();
-        }
-      }
-    );
-    const msgTitle = `Killing container *${containerToKill.name}*`;
+    const msgTitle = `Killing container *${
+      containerToKill.name
+    }*: ${checkResultToText(checksOrNull)}`;
     console.info(msgTitle);
-    trySendAlert({ msgTitle });
-    await waitForTime(galaxy);
+
+    if (options.simulation) {
+      console.info(`simulation: Killing`);
+    } else {
+      await galaxy.$eval(
+        `.container-item:nth-child(${indexContainerToKill + 1})`,
+        item => {
+          const $killButton = item.querySelector('.icon-power');
+          if ($killButton) {
+            $killButton.click();
+          }
+        }
+      );
+      trySendAlert({ msgTitle });
+      await waitForTime(galaxy);
+    }
   }
 
-  const shouldAddContainer =
-    !isScalingContainer &&
-    quantity < maxContainers &&
-    checkAction('addWhen', autoscaleRules, activeMetrics, {
+  const checksToAddOrNull = checkAction(
+    'addWhen',
+    autoscaleRules,
+    activeMetrics,
+    {
       andMode: false,
-    });
+    }
+  );
+  const shouldAddContainer =
+    !isScalingContainer && quantity < maxContainers && checksToAddOrNull;
   if (shouldAddContainer) {
     const containersToAdd =
       quantity + containersToScale > maxContainers ? 1 : containersToScale;
@@ -498,24 +472,25 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       galaxy,
       loadingIndicatorSelector,
       trySendAlert,
+      options,
+      reason: checkResultToText(checksToAddOrNull),
     });
     return true;
   }
 
+  const checksToReduceOrNull = checkAction(
+    'reduceWhen',
+    autoscaleRules,
+    {
+      ...activeMetrics,
+      sessionsAverage:
+        (activeMetrics.sessionsAverage * runningContainersQuantity) /
+        (runningContainersQuantity - 1),
+    },
+    { andMode: true }
+  );
   const shouldReduceContainer =
-    !isScalingContainer &&
-    quantity > minContainers &&
-    checkAction(
-      'reduceWhen',
-      autoscaleRules,
-      {
-        ...activeMetrics,
-        sessionsAverage:
-          (activeMetrics.sessionsAverage * runningContainersQuantity) /
-          (runningContainersQuantity - 1),
-      },
-      { andMode: true }
-    );
+    !isScalingContainer && quantity > minContainers && checksToReduceOrNull;
   if (shouldReduceContainer) {
     const containersToReduce =
       quantity - containersToScale < minContainers ? 1 : containersToScale;
@@ -526,6 +501,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       galaxy,
       loadingIndicatorSelector,
       trySendAlert,
+      options,
+      reason: checkResultToText(checksToAddOrNull),
     });
     return true;
   }

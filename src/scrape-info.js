@@ -8,31 +8,38 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
     '.cardinal-number.editable > div > input[type=number]',
     c => c[0].value
   );
+  console.log(`info: galaxy: quantity=${quantity}`);
   const type = await galaxy.$$eval('.cardinal-subtext', c => c[0].innerText);
   const [running, unavailable] = await galaxy.$$eval(
     '.cardinal-number > span',
     r => [r[0].innerText, r[1].innerText]
   );
+  console.log(`info: galaxy: running=${running}, unavailable=${unavailable}`);
   const scaling = await galaxy.$eval(
     '.lower-row',
     item => !!item.querySelector('.drawer.arrow-third')
   );
+  console.log(`info: galaxy: scaling=${scaling}`);
   const containersWithGalaxyInfo = await galaxy.$$eval(
     '.container-item',
     items =>
-      items.map(item => ({
-        name: item.querySelector('.truncate').innerText,
-        timestamp: item.querySelector('.timestamp').innerText,
-        clients: parseInt(
-          item.querySelector('.clients > svg > .value > text').innerHTML,
-          10
-        ),
-        cpu: item.querySelector('.cpu > svg > .value > text').innerHTML,
-        memory: item.querySelector('.memory > svg > .value > text').innerHTML,
-        starting: !!item.querySelector('.app-status.starting.small'),
-        running: !!item.querySelector('.app-status.running.small'),
-        stopping: !!item.querySelector('.app-status.stopping.small'),
-      }))
+      items.map(item => {
+        const name = item.querySelector('.truncate').innerText;
+        console.log(`info: galaxy: container name=${name}`);
+        return {
+          name,
+          timestamp: item.querySelector('.timestamp').innerText,
+          clients: parseInt(
+            item.querySelector('.clients > svg > .value > text').innerHTML,
+            10
+          ),
+          cpu: item.querySelector('.cpu > svg > .value > text').innerHTML,
+          memory: item.querySelector('.memory > svg > .value > text').innerHTML,
+          starting: !!item.querySelector('.app-status.starting.small'),
+          running: !!item.querySelector('.app-status.running.small'),
+          stopping: !!item.querySelector('.app-status.stopping.small'),
+        };
+      })
   );
 
   await bringToFront(apm);
@@ -58,6 +65,7 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
   const containers = [];
   for (const container of containersWithGalaxyInfo) {
     try {
+      console.log(`info: apm: container name=${container.name}`);
       const containerSelector = `li[class="${container.name}"] a`;
 
       // eslint-disable-next-line no-await-in-loop

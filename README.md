@@ -80,13 +80,15 @@ Check the [log of changes](./CHANGELOG.md).
     "minContainers": 2,
     "maxContainers": 10,
     "addWhen": {
-      "responseTimeAbove": 300,
+      "pubSubResponseTimeAbove": 300,
+      "methodResponseTimeAbove": 300,
       "cpuAbove": 50,
       "memoryAbove":  70,
       "sessionsAbove":  50
     },
     "reduceWhen": {
-      "responseTimeBelow": 150,
+      "pubSubResponseTimeBelow": 300,
+      "methodResponseTimeBelow": 300,
       "cpuBelow": 25,
       "memoryBelow": 25,
       "sessionsBelow": 30
