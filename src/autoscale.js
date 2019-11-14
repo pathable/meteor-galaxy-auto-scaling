@@ -137,7 +137,7 @@ const checkAction = (action, rules, metricsParam, { andMode = true } = {}) => {
     when[check.whenField] == null ? null : check
   ).filter(Boolean);
   if (!checksConfigured.length) {
-    return false;
+    return null;
   }
   const scaledSuccessChecks = checksConfigured
     .map(check => {
@@ -172,12 +172,9 @@ const checkAction = (action, rules, metricsParam, { andMode = true } = {}) => {
     })
     .filter(Boolean);
 
-  let check = false;
-  if (andMode) {
-    check = scaledSuccessChecks.length === checksConfigured.length;
-  } else {
-    check = scaledSuccessChecks.length > 0;
-  }
+  const check = andMode
+    ? scaledSuccessChecks.length === checksConfigured.length
+    : scaledSuccessChecks.length > 0;
 
   if (check) {
     console.log(`action: ${action} ${checkResultToText(scaledSuccessChecks)}`);
