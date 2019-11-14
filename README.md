@@ -56,6 +56,7 @@ Check the [log of changes](./CHANGELOG.md).
   "password": "your Galaxy password (required)",
   "slackWebhook": "your Slack webhook URL",
   "silentSlack": false,
+  "simulation": false,  
   "persistentStorage": "full path to where we want to storage scrapped info",
   "infoRules": {
     "send": true,   
