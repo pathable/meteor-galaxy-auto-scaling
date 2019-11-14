@@ -95,7 +95,8 @@ Check the [log of changes](./CHANGELOG.md).
       "sessionsBelow": 30
     },
     "killWhen": {
-      "responseTimeAbove": 1000,
+      "pubSubResponseTimeAbove": 1000,
+      "methodResponseTimeBelow": 1000,
       "cpuAbove": 90,
       "memoryAbove":  90,
       "sessionsAbove":  100
