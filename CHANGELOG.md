@@ -10,6 +10,12 @@ N/A
 
 * TDB
 
+## v0.0.21, 2019-11-15
+
+### Changes
+
+* adds more logs
+
 ## v0.0.20, 2019-11-15
 
 ### Changes
