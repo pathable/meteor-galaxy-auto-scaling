@@ -74,6 +74,7 @@ const alertAppMetricAboveMax = ({
   if (maxValue == null) {
     return;
   }
+  console.log(`info: checking alerts for app name=${appLink}`);
 
   const metricsWithTimestamp = data.stats
     .filter(s => s.metrics[metricName])
@@ -86,16 +87,15 @@ const alertAppMetricAboveMax = ({
     metricsWithTimestamp.length &&
     metricsWithTimestamp.map(c => c.value).every(v => v > maxValue)
   ) {
-    console.log(`info: sending app alert to Slack`);
+    const text = `Latest ${
+      metricsWithTimestamp.length
+    } metrics are above ${SUPPORTED_APP_METRICS[metricName].format(maxValue)}`;
+    console.log(`alert: app ${appLink}: ${text}`);
     slack.alert({
       ...(channel ? { channel } : {}),
       text: `${
         messagePrefix ? `${messagePrefix} ` : ''
-      }${appLink}: application compromised\n*${metricName}*: Latest ${
-        metricsWithTimestamp.length
-      } metrics are above ${SUPPORTED_APP_METRICS[metricName].format(
-        maxValue
-      )}\n${metricsWithTimestamp
+      }${appLink}: application compromised\n*${metricName}*: ${text}\n${metricsWithTimestamp
         .map(
           valueWithTimestamp =>
             `${getFormattedTimestamp(
@@ -143,20 +143,22 @@ const alertContainerMetricAboveMax = ({
 
   Object.entries(metricsByContainer).forEach(
     ([containerName, valuesWithTimestamp]) => {
+      console.log(`info: checking alerts for container name=${containerName}`);
       if (
         valuesWithTimestamp.length &&
         valuesWithTimestamp.map(c => c.value).every(v => v > maxValue)
       ) {
-        console.log(`info: sending container alert to Slack`);
+        const text = `Latest ${
+          valuesWithTimestamp.length
+        } metrics are above ${SUPPORTED_CONTAINER_METRICS[metricName].format(
+          maxValue
+        )}`;
+        console.log(`alert: container ${containerName}: ${text}`);
         slack.alert({
           ...(channel ? { channel } : {}),
           text: `${
             messagePrefix ? `${messagePrefix} ` : ''
-          }${appLink}\n*${containerName}*: container compromised\n*${metricName}*: Latest ${
-            valuesWithTimestamp.length
-          } metrics are above ${SUPPORTED_CONTAINER_METRICS[metricName].format(
-            maxValue
-          )}\n${valuesWithTimestamp
+          }${appLink}\n*${containerName}*: container compromised\n*${metricName}*: ${text}\n${valuesWithTimestamp
             .map(
               valueWithTimestamp =>
                 `${getFormattedTimestamp(

@@ -181,6 +181,8 @@ const checkAction = (action, rules, metricsParam, { andMode = true } = {}) => {
     ? scaledSuccessChecks.length === checksConfigured.length
     : scaledSuccessChecks.length > 0;
 
+  console.log(`info: ${action} => ${check ? 'YES' : 'NO'}`);
+
   if (check) {
     console.log(`action: ${action} ${checkResultToText(scaledSuccessChecks)}`);
     return scaledSuccessChecks;
@@ -372,7 +374,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   if (!isScalingContainer && runningContainersQuantity < minContainers) {
     const adding = minContainers - runningContainersQuantity;
     const msg = `Below minimum of containers, adding ${adding}`;
-    console.info(msg);
+    console.info(`action: addingToMinimum: ${msg}`);
     await scaleUp({
       scaleTo: minContainers,
       adding,
@@ -388,7 +390,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   if (!isScalingContainer && runningContainersQuantity > maxContainers) {
     const reducing = runningContainersQuantity - maxContainers;
     const msg = `Above maximum of containers, reducing ${reducing}`;
-    console.info(msg);
+    console.info(`action: reducingToMaximum: ${msg}`);
     await scaleDown({
       scaleTo: maxContainers,
       reducing,
