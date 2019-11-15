@@ -21,5 +21,5 @@ const main = async () => {
 
 main().catch(e => {
   console.error('Error on main', e);
-  throw e;
+  process.exit(1);
 });

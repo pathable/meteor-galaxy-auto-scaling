@@ -56,6 +56,7 @@ Check the [log of changes](./CHANGELOG.md).
   "password": "your Galaxy password (required)",
   "slackWebhook": "your Slack webhook URL",
   "silentSlack": false,
+  "simulation": false,  
   "persistentStorage": "full path to where we want to storage scrapped info",
   "infoRules": {
     "send": true,   
@@ -94,7 +95,8 @@ Check the [log of changes](./CHANGELOG.md).
       "sessionsBelow": 30
     },
     "killWhen": {
-      "responseTimeAbove": 1000,
+      "pubSubResponseTimeAbove": 1000,
+      "methodResponseTimeBelow": 1000,
       "cpuAbove": 90,
       "memoryAbove":  90,
       "sessionsAbove":  100

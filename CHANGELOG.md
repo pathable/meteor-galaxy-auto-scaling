@@ -10,6 +10,12 @@ N/A
 
 * TDB
 
+## v0.0.19, 2019-11-15
+
+### Changes
+
+* fix a bug that produced the job to not run scale actions
+
 ## v0.0.18, 2019-11-12
 
 ### Changes

@@ -119,6 +119,11 @@ const ALL_CHECKS = [
 ];
 
 function checkResultToText(scaledSuccessChecks) {
+  if (!scaledSuccessChecks) {
+    throw new Error(
+      `scaledSuccessChecks=${scaledSuccessChecks} should never be null or undefined here`
+    );
+  }
   return `${scaledSuccessChecks
     .map(
       c =>
@@ -137,7 +142,7 @@ const checkAction = (action, rules, metricsParam, { andMode = true } = {}) => {
     when[check.whenField] == null ? null : check
   ).filter(Boolean);
   if (!checksConfigured.length) {
-    return false;
+    return null;
   }
   const scaledSuccessChecks = checksConfigured
     .map(check => {
@@ -172,12 +177,9 @@ const checkAction = (action, rules, metricsParam, { andMode = true } = {}) => {
     })
     .filter(Boolean);
 
-  let check = false;
-  if (andMode) {
-    check = scaledSuccessChecks.length === checksConfigured.length;
-  } else {
-    check = scaledSuccessChecks.length > 0;
-  }
+  const check = andMode
+    ? scaledSuccessChecks.length === checksConfigured.length
+    : scaledSuccessChecks.length > 0;
 
   if (check) {
     console.log(`action: ${action} ${checkResultToText(scaledSuccessChecks)}`);
@@ -502,7 +504,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       loadingIndicatorSelector,
       trySendAlert,
       options,
-      reason: checkResultToText(checksToAddOrNull),
+      reason: checkResultToText(checksToReduceOrNull),
     });
     return true;
   }
