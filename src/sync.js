@@ -74,8 +74,8 @@ const alertAppMetricAboveMax = ({
   if (maxValue == null) {
     return;
   }
-  console.log(`info: checking alerts for app name=${appLink}`);
 
+  console.log(`info: checking alerts about ${metricName}`);
   const metricsWithTimestamp = data.stats
     .filter(s => s.metrics[metricName])
     .map(s => ({
@@ -95,7 +95,7 @@ const alertAppMetricAboveMax = ({
       ...(channel ? { channel } : {}),
       text: `${
         messagePrefix ? `${messagePrefix} ` : ''
-      }${appLink}: application compromised\n*${metricName}*: ${text}\n${metricsWithTimestamp
+      }${appLink}: application\n*${metricName}*: ${text}\n${metricsWithTimestamp
         .map(
           valueWithTimestamp =>
             `${getFormattedTimestamp(
@@ -158,7 +158,7 @@ const alertContainerMetricAboveMax = ({
           ...(channel ? { channel } : {}),
           text: `${
             messagePrefix ? `${messagePrefix} ` : ''
-          }${appLink}\n*${containerName}*: container compromised\n*${metricName}*: ${text}\n${valuesWithTimestamp
+          }${appLink}\n*container: ${containerName}*:\n*${metricName}*: ${text}\n${valuesWithTimestamp
             .map(
               valueWithTimestamp =>
                 `${getFormattedTimestamp(
@@ -309,6 +309,8 @@ export const sync = async optionsParam => {
         messagePrefix: alertMessagePrefix,
       });
     });
+
+    console.log(`info: checking alerts for app name=${options.appName}`);
     Object.entries(maxInApp).forEach(([metricName, maxValue]) => {
       alertAppMetricAboveMax({
         metricName,
