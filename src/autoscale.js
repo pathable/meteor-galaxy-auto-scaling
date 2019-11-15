@@ -119,6 +119,11 @@ const ALL_CHECKS = [
 ];
 
 function checkResultToText(scaledSuccessChecks) {
+  if (!scaledSuccessChecks) {
+    throw new Error(
+      `scaledSuccessChecks=${scaledSuccessChecks} should never be null or undefined here`
+    );
+  }
   return `${scaledSuccessChecks
     .map(
       c =>
@@ -499,7 +504,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       loadingIndicatorSelector,
       trySendAlert,
       options,
-      reason: checkResultToText(checksToAddOrNull),
+      reason: checkResultToText(checksToReduceOrNull),
     });
     return true;
   }
