@@ -118,15 +118,19 @@ const ALL_CHECKS = [
   },
 ];
 
-function checkResultToText(scaledSuccessChecks) {
-  return `${scaledSuccessChecks
-    .map(
-      c =>
-        `${c.metricField} ${c.metricValue} is ${
-          c.greaterThan ? 'greater than' : 'less than'
-        } ${c.whenField} ${c.whenValue}`
-    )
-    .join(', ')}`;
+function checkResultToText(scaledSuccessChecksOrNull) {
+  return (
+    (scaledSuccessChecksOrNull &&
+      `${scaledSuccessChecksOrNull
+        .map(
+          c =>
+            `${c.metricField} ${c.metricValue} is ${
+              c.greaterThan ? 'greater than' : 'less than'
+            } ${c.whenField} ${c.whenValue}`
+        )
+        .join(', ')}`) ||
+    ''
+  );
 }
 
 const checkAction = (action, rules, metricsParam, { andMode = true } = {}) => {
