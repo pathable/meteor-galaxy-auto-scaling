@@ -10,11 +10,17 @@ N/A
 
 * TDB
 
+## v0.0.20, 2019-11-15
+
+### Changes
+
+* fixes scaling down, it was not working from version 0.0.18 due to a wrong variable being null
+
 ## v0.0.19, 2019-11-15
 
 ### Changes
 
-* fix a bug that produced the job to not run scale actions
+* not a good version
 
 ## v0.0.18, 2019-11-12
 
