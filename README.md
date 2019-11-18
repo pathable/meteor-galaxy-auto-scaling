@@ -93,13 +93,6 @@ Check the [log of changes](./CHANGELOG.md).
       "cpuBelow": 25,
       "memoryBelow": 25,
       "sessionsBelow": 30
-    },
-    "killWhen": {
-      "pubSubResponseTimeAbove": 1000,
-      "methodResponseTimeBelow": 1000,
-      "cpuAbove": 90,
-      "memoryAbove":  90,
-      "sessionsAbove":  100
     }
   },
   "minimumStats": 5,
@@ -119,9 +112,8 @@ The autoscaling (`autoscaleRules`) behavior is meant to adjust smartly the conta
 - Three actions are supported:
   - `add` containers (conditions are configured on `addWhen` json key);
   - `reduce` containers (conditions are configured on `reduceWhen` json key);
-  - `kill` containers (conditions are configured on `killWhen` json key).
 
-- The conditions available are: "[responseTime|cpu|memory|sessions|currentCpu|currentMemory][Above|Below]". Check out to which values refer for each: [from Galaxy Panel](https://user-images.githubusercontent.com/2581993/68477766-26baa380-0226-11ea-81da-c0b635f717d6.png) and [APM panel](https://user-images.githubusercontent.com/2581993/68478308-764d9f00-0227-11ea-94b0-dab7dec21529.png).
+- The conditions available are: "[pubSubResponseTime|methodResponseTime|cpu|memory|sessions][Above|Below]". Check out to which values refer for each: [from Galaxy Panel](https://user-images.githubusercontent.com/2581993/68477766-26baa380-0226-11ea-81da-c0b635f717d6.png) and [APM panel](https://user-images.githubusercontent.com/2581993/68478308-764d9f00-0227-11ea-94b0-dab7dec21529.png).
 
 - The conditions express the property average on the active containers. The active containers are
  those that are running, the ones starting or stopping are ignored.
@@ -130,13 +122,10 @@ The autoscaling (`autoscaleRules`) behavior is meant to adjust smartly the conta
  action
   - `add` action evaluates with `OR`, one match is enough to add new container
   - `reduce` action evaluates with `AND`, one miss match is enough to not remove one container
-  - `kill` action evaluates with `AND`, one miss match is enough to not kill the container
 
 - The `addWhen` and `reduceWhen` behaviors check to not go beyond a containers count range. This range is described by the `minContainers` and `maxContainers` configuration.
 
 - The `addWhen` and `reduceWhen` behaviors won't run if a scaling is happening. If any other condition passes it will run on the next run.
-
-- The `killWhen` behavior tries to kill the container with high CPU consumption and that matches the conditions configured.
 
 - An slack message is sent anytime a scaling behavior is triggered if you set a Slack Webhook, the
  messages are sent to the default webhook channel. You will receive messages like this

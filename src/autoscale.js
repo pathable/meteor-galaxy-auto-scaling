@@ -43,72 +43,52 @@ const trySendAlertToSlack = (
 
 const ALL_CHECKS = [
   {
-    metricField: 'pubSubResponseTimeAverage',
+    metricField: 'pubSubResponseTime',
     whenField: 'pubSubResponseTimeAbove',
     greaterThan: true,
   },
   {
-    metricField: 'pubSubResponseTimeAverage',
+    metricField: 'pubSubResponseTime',
     whenField: 'pubSubResponseTimeBelow',
     greaterThan: false,
   },
   {
-    metricField: 'methodResponseTimeAverage',
+    metricField: 'methodResponseTime',
     whenField: 'methodResponseTimeAbove',
     greaterThan: true,
   },
   {
-    metricField: 'methodResponseTimeAverage',
+    metricField: 'methodResponseTime',
     whenField: 'methodResponseTimeBelow',
     greaterThan: false,
   },
   {
-    metricField: 'cpuAverage',
+    metricField: 'cpuUsageAverage',
     whenField: 'cpuAbove',
     greaterThan: true,
   },
   {
-    metricField: 'cpuAverage',
+    metricField: 'cpuUsageAverage',
     whenField: 'cpuBelow',
     greaterThan: false,
   },
   {
-    metricField: 'currentCpuAverage',
-    whenField: 'currentCpuAbove',
-    greaterThan: true,
-  },
-  {
-    metricField: 'currentCpuAverage',
-    whenField: 'currentCpuBelow',
-    greaterThan: false,
-  },
-  {
-    metricField: 'memoryAverage',
+    metricField: 'memoryUsageByHost',
     whenField: 'memoryAbove',
     greaterThan: true,
   },
   {
-    metricField: 'memoryAverage',
+    metricField: 'memoryUsageByHost',
     whenField: 'memoryBelow',
     greaterThan: false,
   },
   {
-    metricField: 'currentMemoryAverage',
-    whenField: 'currentMemoryAbove',
-    greaterThan: true,
-  },
-  {
-    metricField: 'currentMemoryAverage',
-    whenField: 'currentMemoryBelow',
-    greaterThan: false,
-  },
-  {
-    metricField: 'sessionsAverage',
+    metricField: 'sessionsByHost',
     whenField: 'sessionsAbove',
     greaterThan: true,
   },
   {
-    metricField: 'sessionsAverage',
+    metricField: 'sessionsByHost',
     whenField: 'sessionsBelow',
     greaterThan: false,
   },
@@ -302,6 +282,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     );
 
   const loadingIndicatorSelector = '.drawer.arrow-third';
+
+  console.log(`metrics`, metrics);
 
   if (running < minContainers) {
     const adding = minContainers - running;
