@@ -4,7 +4,6 @@ import {
   waitForTime,
   times,
   round,
-  getPercentualNumber,
   isScaling,
 } from './utilities';
 import { WAIT_SELECTOR_TIMEOUT } from './constants';
@@ -13,26 +12,22 @@ const MAX_CONTAINERS = 10;
 const MIN_CONTAINERS = 2;
 
 const trySendAlertToSlack = (
-  { appLink, msgTitle, activeMetrics, channel, messagePrefix },
+  { appLink, msgTitle, metrics, channel, messagePrefix },
   options,
   slack
 ) => {
   const responseTimeAverage =
-    round(activeMetrics.pubSubResponseTimeAverage) +
-    round(activeMetrics.methodResponseTimeAverage);
+    round(metrics.pubSubResponseTimeAverage) +
+    round(metrics.methodResponseTimeAverage);
   const activeMetricsFormatted = {
     responseTimeAverage: `${responseTimeAverage}ms`,
-    pubSubResponseTimeAverage: `${round(
-      activeMetrics.pubSubResponseTimeAverage
-    )}ms`,
-    methodResponseTimeAverage: `${round(
-      activeMetrics.methodResponseTimeAverage
-    )}ms`,
-    memoryAverage: `${round(activeMetrics.memoryAverage)}MB`,
-    cpuAverage: `${round(activeMetrics.cpuAverage)}%`,
-    sessionsAverage: `${round(activeMetrics.sessionsAverage, 1)}%`,
-    currentCpuAverage: `${round(activeMetrics.currentCpuAverage, 1)}%`,
-    currentMemoryAverage: `${round(activeMetrics.currentMemoryAverage, 1)}%`,
+    pubSubResponseTimeAverage: `${round(metrics.pubSubResponseTimeAverage)}ms`,
+    methodResponseTimeAverage: `${round(metrics.methodResponseTimeAverage)}ms`,
+    memoryAverage: `${round(metrics.memoryAverage)}MB`,
+    cpuAverage: `${round(metrics.cpuAverage)}%`,
+    sessionsAverage: `${round(metrics.sessionsAverage, 1)}%`,
+    currentCpuAverage: `${round(metrics.currentCpuAverage, 1)}%`,
+    currentMemoryAverage: `${round(metrics.currentMemoryAverage, 1)}%`,
   };
   const lastMetricsText = `${Object.entries(activeMetricsFormatted)
     .map(([key, value]) => `*${key}*\n${value}`)
@@ -281,81 +276,9 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   await bringToFront(galaxy);
 
   const appLink = getAppLink(options);
-  const { containers } = lastStat;
+  const { metrics } = lastStat;
   const quantity = parseInt(lastStat.quantity, 10);
   const running = parseInt(lastStat.running, 10);
-  const runningContainers = containers.filter(container => container.running);
-  const activeMetricsByContainer = runningContainers.map(container => {
-    const {
-      pubSubResponseTime = '0',
-      methodResponseTime = '0',
-      memoryUsageByHost = '0',
-      cpuUsageAverage = '0',
-      sessionsByHost = '0',
-      cpu: currentCpu = '0',
-      memory: currentMemory = '0',
-    } = container;
-    return {
-      ...container,
-      pubSubResponseTimeAverage: parseFloat(pubSubResponseTime),
-      methodResponseTimeAverage: parseFloat(methodResponseTime),
-      memoryAverage: parseFloat(memoryUsageByHost),
-      cpuAverage: parseFloat(cpuUsageAverage),
-      sessionsAverage: parseFloat(sessionsByHost),
-      currentCpuAverage: parseFloat(getPercentualNumber(currentCpu)),
-      currentMemoryAverage: parseFloat(getPercentualNumber(currentMemory)),
-    };
-  });
-
-  const activeMetrics = runningContainers.reduce((avgMetrics, container, i) => {
-    const {
-      pubSubResponseTimeAverage: avgPubSubResponseTime = '0',
-      methodResponseTimeAverage: avgMethodResponseTime = '0',
-      memoryAverage: avgMemoryUsageByHost = '0',
-      cpuAverage: avgCpuUsageAverage = '0',
-      sessionsAverage: avgSessionsByHost = '0',
-      currentCpuAverage: avgCurrentCpu = '0',
-      currentMemoryAverage: avgCurrentMemory = '0',
-    } = avgMetrics;
-    const {
-      pubSubResponseTime = '0',
-      methodResponseTime = '0',
-      memoryUsageByHost = '0',
-      cpuUsageAverage = '0',
-      sessionsByHost = '0',
-      cpu: currentCpu = '0',
-      memory: currentMemory = '0',
-    } = container;
-
-    const divisionBy = (i === running - 1 && running) || 1;
-
-    return {
-      ...avgMetrics,
-      pubSubResponseTimeAverage:
-        (parseFloat(avgPubSubResponseTime) + parseFloat(pubSubResponseTime)) /
-        divisionBy,
-      methodResponseTimeAverage:
-        (parseFloat(avgMethodResponseTime) + parseFloat(methodResponseTime)) /
-        divisionBy,
-      memoryAverage:
-        (parseFloat(avgMemoryUsageByHost) + parseFloat(memoryUsageByHost)) /
-        divisionBy,
-      cpuAverage:
-        (parseFloat(avgCpuUsageAverage) + parseFloat(cpuUsageAverage)) /
-        divisionBy,
-      sessionsAverage:
-        (parseFloat(avgSessionsByHost) + parseFloat(sessionsByHost)) /
-        divisionBy,
-      currentCpuAverage:
-        (parseFloat(avgCurrentCpu) +
-          parseFloat(getPercentualNumber(currentCpu))) /
-        divisionBy,
-      currentMemoryAverage:
-        (parseFloat(avgCurrentMemory) +
-          parseFloat(getPercentualNumber(currentMemory))) /
-        divisionBy,
-    };
-  }, {});
 
   const {
     minContainers = MIN_CONTAINERS,
@@ -370,8 +293,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       {
         appLink,
         msgTitle,
-        activeMetrics,
-        activeMetricsByContainer,
+        metrics,
         channel,
         messagePrefix,
       },
@@ -415,67 +337,9 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     return true;
   }
 
-  const containerToKill = activeMetricsByContainer.reduce(
-    (maxCpuContainer, container) =>
-      (!container.stopping &&
-        !container.starting &&
-        container.currentCpuAverage > maxCpuContainer.currentCpuAverage &&
-        container) ||
-      maxCpuContainer,
-    activeMetricsByContainer[0]
-  );
-  const killingContainerCount = containers.reduce(
-    (acc, container) =>
-      container.stopping || container.starting ? acc + 1 : acc,
-    0
-  );
-  const indexContainerToKill = containers.findIndex(
-    container => container.name === containerToKill.name
-  );
-
-  const checksOrNull = checkAction(
-    'killWhen',
-    autoscaleRules,
-    containerToKill,
-    { andMode: true }
-  );
-  const shouldKillContainer =
-    killingContainerCount + 1 !== quantity &&
-    indexContainerToKill > -1 &&
-    containerToKill &&
-    checksOrNull;
-
-  if (shouldKillContainer) {
-    const msgTitle = `Killing container *${
-      containerToKill.name
-    }*: ${checkResultToText(checksOrNull)}`;
-    console.info(msgTitle);
-
-    if (options.simulation) {
-      console.info(`simulation: Killing`);
-    } else {
-      await galaxy.$eval(
-        `.container-item:nth-child(${indexContainerToKill + 1})`,
-        item => {
-          const $killButton = item.querySelector('.icon-power');
-          if ($killButton) {
-            $killButton.click();
-          }
-        }
-      );
-      trySendAlert({ msgTitle });
-      await waitForTime(galaxy);
-    }
-  }
-
-  const checksToAddOrNull = checkAction(
-    'addWhen',
-    autoscaleRules,
-    activeMetrics,
-    {
-      andMode: false,
-    }
-  );
+  const checksToAddOrNull = checkAction('addWhen', autoscaleRules, metrics, {
+    andMode: false,
+  });
   const shouldAddContainer = quantity < maxContainers && checksToAddOrNull;
 
   if (shouldAddContainer) {
@@ -499,9 +363,8 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     'reduceWhen',
     autoscaleRules,
     {
-      ...activeMetrics,
-      sessionsAverage:
-        (activeMetrics.sessionsAverage * running) / (running - 1),
+      ...metrics,
+      sessionsAverage: (metrics.sessionsAverage * running) / (running - 1),
     },
     { andMode: true }
   );

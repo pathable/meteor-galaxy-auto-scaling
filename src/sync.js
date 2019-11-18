@@ -8,7 +8,6 @@ import {
   getAppLink,
   getFormattedTimestamp,
   getMillisecondsNumber,
-  getPercentualNumber,
   goAndLoginAPM,
   goAndLoginGalaxy,
   logout,
@@ -38,15 +37,6 @@ const getSlack = options => {
       console.log('no slack - note', ...args);
     },
   };
-};
-
-const SUPPORTED_CONTAINER_METRICS = {
-  cpu: { parse: getPercentualNumber, format: value => `${value}%` },
-  memory: {
-    parse: getPercentualNumber,
-    format: value => `${value}%`,
-  },
-  clients: { parse: value => value, format: value => value },
 };
 
 const SUPPORTED_APP_METRICS = {
@@ -109,71 +99,6 @@ const alertAppMetricAboveMax = ({
         )}\n*Metrics*\n${lastMetricsText}\n*Containers*\n${lastContainerText}`,
     });
   }
-};
-
-const alertContainerMetricAboveMax = ({
-  metricName,
-  maxValue,
-  data,
-  slack,
-  appLink,
-  lastMetricsText,
-  lastContainerText,
-  channel,
-  messagePrefix,
-}) => {
-  if (maxValue == null) {
-    return;
-  }
-  const metricsByContainer = data.stats
-    .flatMap(s => s.containers.map(c => ({ ...c, timestamp: s.timestamp })))
-    .reduce(
-      (acc, c) => ({
-        ...acc,
-        [c.name]: [
-          ...(acc[c.name] || []),
-          {
-            value: SUPPORTED_CONTAINER_METRICS[metricName].parse(c[metricName]),
-            timestamp: c.timestamp,
-          },
-        ],
-      }),
-      {}
-    );
-
-  Object.entries(metricsByContainer).forEach(
-    ([containerName, valuesWithTimestamp]) => {
-      console.log(`info: checking alerts for container name=${containerName}`);
-      if (
-        valuesWithTimestamp.length &&
-        valuesWithTimestamp.map(c => c.value).every(v => v > maxValue)
-      ) {
-        const text = `Latest ${
-          valuesWithTimestamp.length
-        } metrics are above ${SUPPORTED_CONTAINER_METRICS[metricName].format(
-          maxValue
-        )}`;
-        console.log(`alert: container ${containerName}: ${text}`);
-        slack.alert({
-          ...(channel ? { channel } : {}),
-          text: `${
-            messagePrefix ? `${messagePrefix} ` : ''
-          }${appLink}\n*container: ${containerName}*:\n*${metricName}*: ${text}\n${valuesWithTimestamp
-            .map(
-              valueWithTimestamp =>
-                `${getFormattedTimestamp(
-                  valueWithTimestamp.timestamp
-                )}: ${SUPPORTED_CONTAINER_METRICS[metricName].format(
-                  valueWithTimestamp.value
-                )}`
-            )
-            .join(
-              '\n'
-            )}\n*Metrics*\n${lastMetricsText}\n*Containers*\n${lastContainerText}`,
-        });
-      }
-    }
-  );
 };
 
 export const sync = async optionsParam => {
@@ -246,7 +171,7 @@ export const sync = async optionsParam => {
     } = options;
 
     const appLink = getAppLink(options);
-    const { containers, metrics, ...containerInfo } = lastStat;
+    const { metrics, ...containerInfo } = lastStat;
     if (send) {
       console.log(`info: sending note to Slack`);
       slack.note({
@@ -263,10 +188,6 @@ export const sync = async optionsParam => {
               ...Object.entries(containerInfo).map(([title, value]) => ({
                 title,
                 value,
-              })),
-              ...containers.map(container => ({
-                title: container.name,
-                value: `${container.timestamp}, ${container.clients} clients, ${container.cpu}, ${container.memory}`,
               })),
             ],
           },
@@ -290,25 +211,11 @@ export const sync = async optionsParam => {
 
     const {
       alertRules: {
-        maxInContainers = [],
         maxInApp = [],
         channel: alertChannel,
         messagePrefix: alertMessagePrefix,
       } = {},
     } = options;
-    Object.entries(maxInContainers).forEach(([metricName, maxValue]) => {
-      alertContainerMetricAboveMax({
-        metricName,
-        maxValue,
-        data,
-        slack,
-        appLink,
-        lastMetricsText,
-        lastContainerText,
-        channel: alertChannel,
-        messagePrefix: alertMessagePrefix,
-      });
-    });
 
     console.log(`info: checking alerts for app name=${options.appName}`);
     Object.entries(maxInApp).forEach(([metricName, maxValue]) => {

@@ -1,5 +1,4 @@
-import { WAIT_SELECTOR_TIMEOUT } from './constants';
-import { bringToFront, isScaling, waitForShortTime } from './utilities';
+import { bringToFront, isScaling } from './utilities';
 
 export const scrapeInfo = async (browser, galaxy, apm) => {
   await bringToFront(galaxy);
@@ -17,27 +16,6 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
   console.log(`info: galaxy: running=${running}, unavailable=${unavailable}`);
   const scaling = await isScaling(galaxy);
   console.log(`info: galaxy: scaling=${scaling}`);
-  const containersWithGalaxyInfo = await galaxy.$$eval(
-    '.container-item',
-    items =>
-      items.map(item => {
-        const name = item.querySelector('.truncate').innerText;
-        console.log(`info: galaxy: container name=${name}`);
-        return {
-          name,
-          timestamp: item.querySelector('.timestamp').innerText,
-          clients: parseInt(
-            item.querySelector('.clients > svg > .value > text').innerHTML,
-            10
-          ),
-          cpu: item.querySelector('.cpu > svg > .value > text').innerHTML,
-          memory: item.querySelector('.memory > svg > .value > text').innerHTML,
-          starting: !!item.querySelector('.app-status.starting.small'),
-          running: !!item.querySelector('.app-status.running.small'),
-          stopping: !!item.querySelector('.app-status.stopping.small'),
-        };
-      })
-  );
 
   await bringToFront(apm);
 
@@ -58,66 +36,12 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
     cpuUsageAverage: cpuUsageAverageText,
     sessionsByHost: sessionsByHostText,
   };
-
-  const containers = [];
-  for (const container of containersWithGalaxyInfo) {
-    try {
-      console.log(`info: apm: container name=${container.name}`);
-      const containerSelector = `li[class="${container.name}"] a`;
-
-      // eslint-disable-next-line no-await-in-loop
-      await apm.waitForSelector(containerSelector, {
-        timeout: WAIT_SELECTOR_TIMEOUT,
-      });
-      // eslint-disable-next-line no-await-in-loop
-      await apm.click('#hosts + .dropdown-toggle');
-      // eslint-disable-next-line no-await-in-loop
-      await apm.click(containerSelector);
-      const containerActiveSelector = `li[class="active ${container.name}"] a`;
-      // eslint-disable-next-line no-await-in-loop
-      await apm.waitForSelector(containerActiveSelector, {
-        timeout: WAIT_SELECTOR_TIMEOUT,
-      });
-      // eslint-disable-next-line no-await-in-loop
-      await apm.waitForSelector('.summery-inner .loading-indicator', {
-        hidden: true,
-        timeout: WAIT_SELECTOR_TIMEOUT,
-      });
-      // eslint-disable-next-line no-await-in-loop
-      await waitForShortTime(apm);
-      // eslint-disable-next-line no-await-in-loop
-      const values = await apm.$$eval('.item', items =>
-        items.map(item => item.querySelector('.value').innerText)
-      );
-      const [
-        pubSubResponseTime,
-        methodResponseTime,
-        memoryUsageByHost,
-        cpuUsageAverage,
-        sessionsByHost,
-      ] = values;
-      containers.push({
-        ...container,
-        pubSubResponseTime,
-        methodResponseTime,
-        memoryUsageByHost,
-        cpuUsageAverage,
-        sessionsByHost,
-      });
-    } catch (e) {
-      // Ignore timeout errors to solve a scenario of some containers
-      // aren't found on APM because a delay on last containers started.
-      console.error(e);
-    }
-  }
-
   return {
     type,
     quantity,
     running,
     scaling,
     unavailable,
-    containers,
     metrics,
     // eslint-disable-next-line no-bitwise
     timestamp: (new Date().getTime() / 1000) | 0,
