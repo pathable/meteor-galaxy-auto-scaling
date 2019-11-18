@@ -283,8 +283,6 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
   const loadingIndicatorSelector = '.drawer.arrow-third';
 
-  console.log(`metrics`, metrics);
-
   if (running < minContainers) {
     const adding = minContainers - running;
     const msg = `Below minimum of containers, adding ${adding}`;
