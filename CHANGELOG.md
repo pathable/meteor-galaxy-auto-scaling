@@ -10,6 +10,12 @@ N/A
 
 * TDB
 
+## v0.0.23, 2019-11-18
+
+### Changes
+
+* changes the way to detect scale in progress
+
 ## v0.0.22, 2019-11-15
 
 ### Changes
