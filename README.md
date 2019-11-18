@@ -71,7 +71,7 @@ Check the [log of changes](./CHANGELOG.md).
       "pubSubResponseTime": 200,
       "methodResponseTime": 300,
       "cpuUsageAverage": 1,
-      "memoryUsageByHost": 10,
+      "memoryUsageByHost": 1500,
       "sessionsByHost": 5
     }
   },
