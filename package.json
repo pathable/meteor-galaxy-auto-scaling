@@ -1,6 +1,6 @@
 {
   "name": "@pathable/meteor-galaxy-auto-scaling",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "license": "MIT",
   "description": "NodeJS command line tool to monitor and auto-scale Meteor Galaxy",
   "main": "dist/index.js",
