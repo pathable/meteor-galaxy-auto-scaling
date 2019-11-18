@@ -15,9 +15,9 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
     r => [r[0].innerText, r[1].innerText]
   );
   console.log(`info: galaxy: running=${running}, unavailable=${unavailable}`);
-  const scaling = await galaxy.$eval('.message', item =>
-    item.innerText.includes('Scaling containers')
-  );
+  const scaling = await galaxy
+    .$eval('.message', item => item.innerText.includes('Scaling containers'))
+    .some(isScaling => isScaling);
   console.log(`info: galaxy: scaling=${scaling}`);
   const containersWithGalaxyInfo = await galaxy.$$eval(
     '.container-item',
