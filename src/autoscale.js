@@ -464,9 +464,14 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       andMode: false,
     }
   );
-  const shouldAddContainer =
-    !isScalingContainer && quantity < maxContainers && checksToAddOrNull;
-  if (shouldAddContainer) {
+  const shouldAddContainer = quantity < maxContainers && checksToAddOrNull;
+
+  if (isScalingContainer && shouldAddContainer) {
+    console.info(
+      `info: Should add container but already scaling from previous actions`
+    );
+  }
+  if (!isScalingContainer && shouldAddContainer) {
     const containersToAdd =
       quantity + containersToScale > maxContainers ? 1 : containersToScale;
     const nextContainerCount = quantity + containersToAdd;
@@ -494,8 +499,13 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     { andMode: true }
   );
   const shouldReduceContainer =
-    !isScalingContainer && quantity > minContainers && checksToReduceOrNull;
-  if (shouldReduceContainer) {
+    quantity > minContainers && checksToReduceOrNull;
+  if (isScalingContainer && shouldReduceContainer) {
+    console.info(
+      `info: Should reduce container but already scaling from previous actions`
+    );
+  }
+  if (!isScalingContainer && shouldReduceContainer) {
     const containersToReduce =
       quantity - containersToScale < minContainers ? 1 : containersToScale;
     const nextContainerCount = quantity - containersToReduce;
