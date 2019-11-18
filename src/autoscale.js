@@ -3,8 +3,8 @@ import {
   getAppLink,
   waitForTime,
   times,
-  round,
   isScaling,
+  SUPPORTED_APP_METRICS,
 } from './utilities';
 import { WAIT_SELECTOR_TIMEOUT } from './constants';
 
@@ -16,21 +16,10 @@ const trySendAlertToSlack = (
   options,
   slack
 ) => {
-  const responseTimeAverage =
-    round(metrics.pubSubResponseTimeAverage) +
-    round(metrics.methodResponseTimeAverage);
-  const activeMetricsFormatted = {
-    responseTimeAverage: `${responseTimeAverage}ms`,
-    pubSubResponseTimeAverage: `${round(metrics.pubSubResponseTimeAverage)}ms`,
-    methodResponseTimeAverage: `${round(metrics.methodResponseTimeAverage)}ms`,
-    memoryAverage: `${round(metrics.memoryAverage)}MB`,
-    cpuAverage: `${round(metrics.cpuAverage)}%`,
-    sessionsAverage: `${round(metrics.sessionsAverage, 1)}%`,
-    currentCpuAverage: `${round(metrics.currentCpuAverage, 1)}%`,
-    currentMemoryAverage: `${round(metrics.currentMemoryAverage, 1)}%`,
-  };
-  const lastMetricsText = `${Object.entries(activeMetricsFormatted)
-    .map(([key, value]) => `*${key}*\n${value}`)
+  const lastMetricsText = `${Object.entries(metrics)
+    .map(
+      ([key, value]) => `*${key}*\n${SUPPORTED_APP_METRICS[key].format(value)}`
+    )
     .join('\n')}`;
   console.log(`info: sending auto scale message to Slack`);
   slack.note({
