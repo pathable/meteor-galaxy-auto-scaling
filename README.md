@@ -66,13 +66,13 @@ Check the [log of changes](./CHANGELOG.md).
     "channel": "#alerts",
     "messagePrefix": "@channel",
     "maxInContainers": {
-      "cpu": 1,
-      "memory": 10,
-      "clients": 5
     },
     "maxInApp": {
       "pubSubResponseTime": 200,
-      "methodResponseTime": 300
+      "methodResponseTime": 300,
+      "cpuUsageAverage": 1,
+      "memoryUsageByHost": 10,
+      "sessionsByHost": 5
     }
   },
   "autoscaleRules": {
