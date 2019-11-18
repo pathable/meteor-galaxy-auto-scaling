@@ -5,6 +5,7 @@ import {
   times,
   round,
   getPercentualNumber,
+  isScaling,
 } from './utilities';
 import { WAIT_SELECTOR_TIMEOUT } from './constants';
 
@@ -193,14 +194,22 @@ const checkAction = (action, rules, metricsParam, { andMode = true } = {}) => {
 async function scaleUp({
   scaleTo,
   adding,
+  running,
   galaxy,
   loadingIndicatorSelector,
   trySendAlert,
   options,
   reason,
 }) {
-  const msgTitle = `Scaling up containers to *${scaleTo}* (${adding} more): ${reason}`;
+  const msgTitle = `Scaling up containers to *${scaleTo}* from ${running} (${adding} more): ${reason}`;
   console.info(msgTitle);
+
+  if (await isScaling(galaxy)) {
+    console.info(
+      `skip: Should add container but already scaling from previous actions`
+    );
+    return;
+  }
 
   if (options.simulation) {
     console.info(`simulation: Scaling up`);
@@ -226,14 +235,22 @@ async function scaleUp({
 async function scaleDown({
   scaleTo,
   reducing,
+  running,
   galaxy,
   loadingIndicatorSelector,
   trySendAlert,
   options,
   reason,
 }) {
-  const msgTitle = `Scaling down containers to *${scaleTo}* (${reducing} less): ${reason}`;
+  const msgTitle = `Scaling down containers to *${scaleTo}* from ${running} (${reducing} less): ${reason}`;
   console.info(msgTitle);
+
+  if (await isScaling(galaxy)) {
+    console.info(
+      `skip: Should reduce container but already scaling from previous actions`
+    );
+    return;
+  }
 
   if (options.simulation) {
     console.info(`simulation: Scaling down`);
@@ -264,8 +281,9 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   await bringToFront(galaxy);
 
   const appLink = getAppLink(options);
-  const { scaling, containers } = lastStat;
+  const { containers } = lastStat;
   const quantity = parseInt(lastStat.quantity, 10);
+  const running = parseInt(lastStat.running, 10);
   const runningContainers = containers.filter(container => container.running);
   const activeMetricsByContainer = runningContainers.map(container => {
     const {
@@ -309,8 +327,7 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
       memory: currentMemory = '0',
     } = container;
 
-    const divisionBy =
-      (i === runningContainers.length - 1 && runningContainers.length) || 1;
+    const divisionBy = (i === running - 1 && running) || 1;
 
     return {
       ...avgMetrics,
@@ -340,8 +357,6 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     };
   }, {});
 
-  const runningContainersQuantity = runningContainers.length;
-
   const {
     minContainers = MIN_CONTAINERS,
     maxContainers = MAX_CONTAINERS,
@@ -349,11 +364,6 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     channel,
     messagePrefix,
   } = autoscaleRules;
-  const isScalingContainer = scaling;
-
-  if (isScalingContainer) {
-    console.info(`info: Already scaling from previous actions`);
-  }
 
   const trySendAlert = ({ msgTitle }) =>
     trySendAlertToSlack(
@@ -371,13 +381,14 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
   const loadingIndicatorSelector = '.drawer.arrow-third';
 
-  if (!isScalingContainer && runningContainersQuantity < minContainers) {
-    const adding = minContainers - runningContainersQuantity;
+  if (running < minContainers) {
+    const adding = minContainers - running;
     const msg = `Below minimum of containers, adding ${adding}`;
     console.info(`action: addingToMinimum: ${msg}`);
     await scaleUp({
       scaleTo: minContainers,
       adding,
+      running,
       galaxy,
       loadingIndicatorSelector,
       trySendAlert,
@@ -387,13 +398,14 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     return true;
   }
 
-  if (!isScalingContainer && runningContainersQuantity > maxContainers) {
-    const reducing = runningContainersQuantity - maxContainers;
+  if (running > maxContainers) {
+    const reducing = running - maxContainers;
     const msg = `Above maximum of containers, reducing ${reducing}`;
     console.info(`action: reducingToMaximum: ${msg}`);
     await scaleDown({
       scaleTo: maxContainers,
       reducing,
+      running,
       galaxy,
       loadingIndicatorSelector,
       trySendAlert,
@@ -466,18 +478,14 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   );
   const shouldAddContainer = quantity < maxContainers && checksToAddOrNull;
 
-  if (isScalingContainer && shouldAddContainer) {
-    console.info(
-      `info: Should add container but already scaling from previous actions`
-    );
-  }
-  if (!isScalingContainer && shouldAddContainer) {
+  if (shouldAddContainer) {
     const containersToAdd =
       quantity + containersToScale > maxContainers ? 1 : containersToScale;
     const nextContainerCount = quantity + containersToAdd;
     await scaleUp({
       scaleTo: nextContainerCount,
       adding: containersToAdd,
+      running,
       galaxy,
       loadingIndicatorSelector,
       trySendAlert,
@@ -493,25 +501,20 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     {
       ...activeMetrics,
       sessionsAverage:
-        (activeMetrics.sessionsAverage * runningContainersQuantity) /
-        (runningContainersQuantity - 1),
+        (activeMetrics.sessionsAverage * running) / (running - 1),
     },
     { andMode: true }
   );
   const shouldReduceContainer =
     quantity > minContainers && checksToReduceOrNull;
-  if (isScalingContainer && shouldReduceContainer) {
-    console.info(
-      `info: Should reduce container but already scaling from previous actions`
-    );
-  }
-  if (!isScalingContainer && shouldReduceContainer) {
+  if (shouldReduceContainer) {
     const containersToReduce =
       quantity - containersToScale < minContainers ? 1 : containersToScale;
     const nextContainerCount = quantity - containersToReduce;
     await scaleDown({
       scaleTo: nextContainerCount,
       reducing: containersToReduce,
+      running,
       galaxy,
       loadingIndicatorSelector,
       trySendAlert,

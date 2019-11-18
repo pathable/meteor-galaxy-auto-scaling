@@ -14,6 +14,17 @@ export const waitForShortTime = async galaxy => {
   await galaxy.waitFor(WAIT_SHORT_TIMEOUT);
 };
 
+export const isScaling = async galaxy => {
+  try {
+    return await galaxy.$eval('.message', item =>
+      item.innerText.includes('Scaling containers')
+    );
+  } catch {
+    // didn't find .message on UI
+    return false;
+  }
+};
+
 export const bringToFront = async page => {
   await page.bringToFront();
   await waitForShortTime(page);

@@ -1,5 +1,5 @@
 import { WAIT_SELECTOR_TIMEOUT } from './constants';
-import { bringToFront, waitForShortTime } from './utilities';
+import { bringToFront, isScaling, waitForShortTime } from './utilities';
 
 export const scrapeInfo = async (browser, galaxy, apm) => {
   await bringToFront(galaxy);
@@ -15,15 +15,7 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
     r => [r[0].innerText, r[1].innerText]
   );
   console.log(`info: galaxy: running=${running}, unavailable=${unavailable}`);
-  let scaling = false;
-  try {
-    scaling = await galaxy.$eval('.message', item =>
-      item.innerText.includes('Scaling containers')
-    );
-  } catch {
-    // didn't find .message on UI
-    scaling = false;
-  }
+  const scaling = await isScaling(galaxy);
   console.log(`info: galaxy: scaling=${scaling}`);
   const containersWithGalaxyInfo = await galaxy.$$eval(
     '.container-item',
