@@ -1,4 +1,4 @@
-import { bringToFront, isScaling } from './utilities';
+import { bringToFront, isScaling, SUPPORTED_APP_METRICS } from './utilities';
 
 export const scrapeInfo = async (browser, galaxy, apm) => {
   await bringToFront(galaxy);
@@ -29,13 +29,25 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
     cpuUsageAverageText,
     sessionsByHostText,
   ] = texts;
+
   const metrics = {
-    pubSubResponseTime: pubSubResponseTimeText,
-    methodResponseTime: methodResponseTimeText,
-    memoryUsageByHost: memoryUsageByHostText,
-    cpuUsageAverage: cpuUsageAverageText,
-    sessionsByHost: sessionsByHostText,
+    pubSubResponseTime: SUPPORTED_APP_METRICS.pubSubResponseTime.parse(
+      pubSubResponseTimeText
+    ),
+    methodResponseTime: SUPPORTED_APP_METRICS.methodResponseTime.parse(
+      methodResponseTimeText
+    ),
+    memoryUsageByHost: SUPPORTED_APP_METRICS.memoryUsageByHost.parse(
+      memoryUsageByHostText
+    ),
+    cpuUsageAverage: SUPPORTED_APP_METRICS.cpuUsageAverage.parse(
+      cpuUsageAverageText
+    ),
+    sessionsByHost: SUPPORTED_APP_METRICS.sessionsByHost.parse(
+      sessionsByHostText
+    ),
   };
+
   return {
     type,
     quantity,

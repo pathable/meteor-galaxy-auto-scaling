@@ -7,10 +7,10 @@ import { scrapeInfo } from './scrape-info';
 import {
   getAppLink,
   getFormattedTimestamp,
-  getMillisecondsNumber,
   goAndLoginAPM,
   goAndLoginGalaxy,
   logout,
+  SUPPORTED_APP_METRICS,
 } from './utilities';
 import { autoscale } from './autoscale';
 
@@ -39,17 +39,6 @@ const getSlack = options => {
   };
 };
 
-const SUPPORTED_APP_METRICS = {
-  pubSubResponseTime: {
-    parse: getMillisecondsNumber,
-    format: value => `${value}ms`,
-  },
-  methodResponseTime: {
-    parse: getMillisecondsNumber,
-    format: value => `${value}ms`,
-  },
-};
-
 const alertAppMetricAboveMax = ({
   metricName,
   maxValue,
@@ -69,7 +58,7 @@ const alertAppMetricAboveMax = ({
   const metricsWithTimestamp = data.stats
     .filter(s => s.metrics[metricName])
     .map(s => ({
-      value: SUPPORTED_APP_METRICS[metricName].parse(s.metrics[metricName]),
+      value: s.metrics[metricName],
       timestamp: s.timestamp,
     }));
 

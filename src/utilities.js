@@ -30,10 +30,11 @@ export const bringToFront = async page => {
   await waitForShortTime(page);
 };
 
-export const getPercentualNumber = txt =>
-  parseInt(txt.match(/\((.*)%\)/i)[1], 10);
+export const getPercentualNumber = txt => parseInt(txt.replace('%', ''), 10);
 
 export const getMillisecondsNumber = txt => parseInt(txt.replace('ms', ''), 10);
+
+export const getMegabytesNumber = txt => parseInt(txt.replace(' MB', ''), 10);
 
 export const getFormattedTimestamp = timestamp =>
   `<!date^${timestamp}^{date_short_pretty} at {time_secs}|${timestamp}>`;
@@ -141,4 +142,27 @@ export const times = (n, fn, context = undefined) => {
 export const round = (num, decimals = 2) => {
   const interDecimal = Math.pow(10, decimals);
   return Math.round(num * interDecimal) / interDecimal;
+};
+
+export const SUPPORTED_APP_METRICS = {
+  pubSubResponseTime: {
+    parse: getMillisecondsNumber,
+    format: value => `${value}ms`,
+  },
+  methodResponseTime: {
+    parse: getMillisecondsNumber,
+    format: value => `${value}ms`,
+  },
+  memoryUsageByHost: {
+    parse: getMegabytesNumber,
+    format: value => `${value} MB`,
+  },
+  cpuUsageAverage: {
+    parse: getPercentualNumber,
+    format: value => `${value}%`,
+  },
+  sessionsByHost: {
+    parse: value => +value,
+    format: value => `${value}`,
+  },
 };
