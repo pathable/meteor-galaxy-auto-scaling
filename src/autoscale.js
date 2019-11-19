@@ -246,7 +246,6 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
 
   const appLink = getAppLink(options);
   const { metrics } = lastStat;
-  const quantity = parseInt(lastStat.quantity, 10);
   const running = parseInt(lastStat.running, 10);
 
   const {
@@ -309,12 +308,12 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
   const checksToAddOrNull = checkAction('addWhen', autoscaleRules, metrics, {
     andMode: false,
   });
-  const shouldAddContainer = quantity < maxContainers && checksToAddOrNull;
+  const shouldAddContainer = running < maxContainers && checksToAddOrNull;
 
   if (shouldAddContainer) {
     const containersToAdd =
-      quantity + containersToScale > maxContainers ? 1 : containersToScale;
-    const nextContainerCount = quantity + containersToAdd;
+      running + containersToScale > maxContainers ? 1 : containersToScale;
+    const nextContainerCount = running + containersToAdd;
     await scaleUp({
       scaleTo: nextContainerCount,
       adding: containersToAdd,
@@ -337,12 +336,11 @@ export const autoscale = async (lastStat, options, { galaxy, slack } = {}) => {
     },
     { andMode: true }
   );
-  const shouldReduceContainer =
-    quantity > minContainers && checksToReduceOrNull;
+  const shouldReduceContainer = running > minContainers && checksToReduceOrNull;
   if (shouldReduceContainer) {
     const containersToReduce =
-      quantity - containersToScale < minContainers ? 1 : containersToScale;
-    const nextContainerCount = quantity - containersToReduce;
+      running - containersToScale < minContainers ? 1 : containersToScale;
+    const nextContainerCount = running - containersToReduce;
     await scaleDown({
       scaleTo: nextContainerCount,
       reducing: containersToReduce,
