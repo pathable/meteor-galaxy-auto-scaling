@@ -1,4 +1,8 @@
-import { bringToFront, isScaling, SUPPORTED_APP_METRICS } from './utilities';
+import {
+  bringToFront,
+  isScalingOrUpdating,
+  SUPPORTED_APP_METRICS,
+} from './utilities';
 
 export const scrapeInfo = async (browser, galaxy, apm) => {
   await bringToFront(galaxy);
@@ -14,8 +18,9 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
     r => [r[0].innerText, r[1].innerText]
   );
   console.log(`info: galaxy: running=${running}, unavailable=${unavailable}`);
-  const scaling = await isScaling(galaxy);
-  console.log(`info: galaxy: scaling=${scaling}`);
+  console.log(
+    `info: galaxy: scaling or updating=${await isScalingOrUpdating(galaxy)}`
+  );
 
   await bringToFront(apm);
 
@@ -52,7 +57,6 @@ export const scrapeInfo = async (browser, galaxy, apm) => {
     type,
     quantity,
     running,
-    scaling,
     unavailable,
     metrics,
     // eslint-disable-next-line no-bitwise

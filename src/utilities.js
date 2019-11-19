@@ -14,10 +14,13 @@ export const waitForShortTime = async galaxy => {
   await galaxy.waitFor(WAIT_SHORT_TIMEOUT);
 };
 
-export const isScaling = async galaxy => {
+export const isScalingOrUpdating = async galaxy => {
   try {
-    return await galaxy.$eval('.message', item =>
-      item.innerText.includes('Scaling containers')
+    return await galaxy.$eval(
+      '.message',
+      item =>
+        item.innerText.includes('Scaling containers') ||
+        item.innerText.includes('Updating all containers to version')
     );
   } catch {
     // didn't find .message on UI

@@ -3,7 +3,7 @@ import {
   getAppLink,
   waitForTime,
   times,
-  isScaling,
+  isScalingOrUpdating,
   SUPPORTED_APP_METRICS,
 } from './utilities';
 import { WAIT_SELECTOR_TIMEOUT } from './constants';
@@ -168,9 +168,9 @@ async function scaleUp({
   const msgTitle = `Scaling up containers to *${scaleTo}* from ${running} (${adding} more): ${reason}`;
   console.info(msgTitle);
 
-  if (await isScaling(galaxy)) {
+  if (await isScalingOrUpdating(galaxy)) {
     console.info(
-      `skip: Should add container but already scaling from previous actions`
+      `skip: Should add container but already scaling from previous actions or updating to a new version`
     );
     return;
   }
@@ -209,9 +209,9 @@ async function scaleDown({
   const msgTitle = `Scaling down containers to *${scaleTo}* from ${running} (${reducing} less): ${reason}`;
   console.info(msgTitle);
 
-  if (await isScaling(galaxy)) {
+  if (await isScalingOrUpdating(galaxy)) {
     console.info(
-      `skip: Should reduce container but already scaling from previous actions`
+      `skip: Should reduce container but already scaling from previous actions or updating to a new version`
     );
     return;
   }
